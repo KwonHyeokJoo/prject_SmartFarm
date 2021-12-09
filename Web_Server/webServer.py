@@ -23,7 +23,6 @@ def tmpUp():
 
 @app.route('/hum/<name>')
 def hello_hum(name):
-	print( '습도값 %s' % name)
 	return '현재습도  %s' % name
 
 @app.route('/lux/<name>')

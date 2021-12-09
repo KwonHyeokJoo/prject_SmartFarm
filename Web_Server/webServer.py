@@ -1,5 +1,6 @@
 from flask import Flask, render_template
 
+num = 0
 mos = 0
 tmp1 = 0
 tmp2 = 0

@@ -1,6 +1,5 @@
 from flask import Flask, render_template
 
-num = 0
 mos = 0
 tmp1 = 0
 tmp2 = 0
@@ -41,15 +40,18 @@ def hello_control(name):
 
 @app.route('/')
 def home():
-	return render_template("home.html", name1=mos, name2=tmp1,name3=hum1)
+	return render_template("home.html", mosH=mos,tmp1H=tmp1,tmp2H=tmp2,hum1H=hum1,hum2H=hum2,luxH=lux)
 
-@app.route('/<mosIn>/<tmpIn>/<humIn>')
-def home2(mosIn,tmpIn,humIn):
+@app.route('/<mosIn>/<tmp1In>/<tmp2In>/<hum1In>/<hum2In>/<luxIn>')
+def home2(mosIn,tmp1In,tmp2In,hum1In,hum2In,luxIn):
+	global mos,tmp1,tmp2,hum1,hum2,lux
 	mos = mosIn
-	tmp1 = tmpIn
-	hum1 = humIn
-	return render_template("home.html",name1=mos,name2=tmp1,name3=hum1)
-
+	tmp1 = tmp1In
+	tmp2 = tmp2In
+	hum1 = hum1In
+	hum2 = hum2In
+	lux = luxIn
+	return render_template("change.html",mosH=mosIn,tmp1H=tmp1In,tmp2H=tmp2In,hum1H=hum1In,hum2H=hum2In,luxH=luxIn)
 
 if __name__ == '__main__':
 	app.run(host='0.0.0.0', port=80)

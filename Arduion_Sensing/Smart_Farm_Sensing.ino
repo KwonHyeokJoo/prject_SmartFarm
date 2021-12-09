@@ -22,6 +22,8 @@ DHT dht(DHTPIN, DHTTYPE);
 const String ssid = "Pi3-AP";
 const String password = "raspberry";
 
+int num;
+
 //서버 IP 설정 및 Port 설정
 const String ip = "192.168.1.1";
 const String port = "80";

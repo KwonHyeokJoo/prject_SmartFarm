@@ -28,14 +28,38 @@ const String ip = "192.168.1.1";
 const String port = "80";
 
 //토양 %, 온도, 습도 출력을 위한 문자열
-char moist_print[5];
-char temp_print[5];
-char humi_print[5];
+//char moist_print[5];
+//char temp_print[5];
+//char humi_print[5];
 
 //입력된 값 찾기위해 버퍼 선언
 char combuffer[50];
 
-uint8_t beforeTemp = 0;
+//LCD에 온습도 출력을 변환시키기 위해 선언
+uint16_t standPrint = 0;
+uint8_t stopPrint = 1;
+
+/*
+int fun( int num ) {
+  time = millis();
+  while( mySerial.available() == 0 ) {
+    if( (millis() - time) > (첫 응답 바이트 받는데 걸리는 시간) ) {
+      return -1;
+    }
+  }
+  
+  for( i = 0; i < num; i++){
+    if(mySerial.available()) {
+      time = millis();
+      combuffer[j] = mySerial.read();
+      Serial.write(combuffer[j]);
+    }
+    whie( (millis() - time) > (1바이트 받는데 걸리는 시간) ) {
+      return;
+    }
+  }
+}
+*/
 
 //wifi connection
 void connectWifi() {
@@ -156,8 +180,52 @@ void serialPrint(uint16_t second){
   }
 }
 
-//현재 온습도 상태 표시
-void lcdPrint(uint16_t moist, int8_t temp1, int8_t temp2, uint8_t humi1, uint8_t humi2){
+//현재 온도 출력
+void printTemp(int8_t temp1, int8_t temp2){
+  //temp 출력을 위한 문자열
+  char temp_print[5];
+
+  lcd.setCursor(1,1);
+  lcd.write(0);
+  sprintf(temp_print, "%02d", temp1);
+  lcd.setCursor(3,1);
+  lcd.print(temp_print);
+  lcd.write(1);
+
+  lcd.setCursor(7,1);
+  lcd.write(0);
+  sprintf(temp_print, "%02d", temp2);
+  lcd.setCursor(9,1);
+  lcd.print(temp_print);
+  lcd.write(1);
+
+}
+
+//현재 습도 출력
+void printHumi(uint8_t humi1, uint8_t humi2){
+  //humi 출력을 위한 문자열
+  char humi_print[5];
+
+  lcd.setCursor(1,1);
+  lcd.write(2);
+  sprintf(humi_print, "%02d", humi1);
+  lcd.setCursor(3,1);
+  lcd.print(humi_print);
+  lcd.print("%");
+  
+  lcd.setCursor(7,1);
+  lcd.write(2);
+  sprintf(humi_print, "%02d", humi2);
+  lcd.setCursor(9,1);
+  lcd.print(humi_print);
+  lcd.print("%");
+  
+}
+
+//현재 토양수분 출력
+void printMoist(uint16_t moist){
+  //moist 수분 출력을 위한 문자열
+  char moist_print[5];
   
   //토양 수분 출력
   lcd.setCursor(1,0);
@@ -187,7 +255,7 @@ void lcdPrint(uint16_t moist, int8_t temp1, int8_t temp2, uint8_t humi1, uint8_t
     lcd.setCursor(14,0);
     lcd.write(6);
   }
-
+/*
   //LCD에 온도값 출력
   lcd.setCursor(1,1);
   lcd.write(0);
@@ -221,7 +289,8 @@ void lcdPrint(uint16_t moist, int8_t temp1, int8_t temp2, uint8_t humi1, uint8_t
   lcd.print("%");
 
   delay(3000);
-  
+
+*/
 }
 
 void setup() {
@@ -264,23 +333,31 @@ void loop() {
   int8_t tempValue2 = (int8_t)dht2.readTemperature();
   // 데이터 전송할 url
   String url;
-  int8_t differenceTemp;
 
   //LCD에 현재 온습도 상태 표시
-  lcdPrint(moist_per, tempValue1, tempValue2, humiValue1, humiValue2);
+  printMoist(moist_per);
 
-  //이전 온도값이 지금 온도값과 5도 차이가 난다면 센싱 값 전송
-  ///////////////////////////////////////////////////////////////////////////////
-  differenceTemp = beforeTemp - tempValue1;
-  if(abs(differenceTemp) >= 5){
-    url = "GET /"+String(moist_per)+"/"+tempValue1+"/"+tempValue2+"/"+humiValue1+
-        "/"+humiValue2+"/"+String(cdsValue)+" HTTP/1.1\r\nHost: " + ip +"\r\n\r\n";
-    dataSend(url);
-
-    beforeTemp = tempValue1;
+  if(standPrint < stopPrint){
+    printTemp(tempValue1, tempValue2);
   }
+  else {
+    printHumi(humiValue1, humiValue2);
+  }
+
+
+  //온도값 전송
+  ///////////////////////////////////////////////////////////////////////////////
+  url = "GET /"+String(moist_per)+"/"+tempValue1+"/"+tempValue2+"/"+humiValue1+
+      "/"+humiValue2+"/"+String(cdsValue)+" HTTP/1.1\r\nHost: " + ip +"\r\n\r\n";
+  dataSend(url);
   ///////////////////////////////////////////////////////////////////////////////
 
+  if(stopPrint == standPrint){
+    standPrint = 0;
+  }
+  else {
+    standPrint++;
+  }
   
   //Restart when wifi connection faill
   connectFailRestart();

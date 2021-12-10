@@ -203,7 +203,7 @@ void lcdPrint(uint16_t moist, int8_t temp1, int8_t temp2, uint8_t humi1, uint8_t
   lcd.print(temp_print);
   lcd.write(1);
 
-  delay(5000);
+  delay(3000);
   
   //LCD에 습도값 출력
   lcd.setCursor(1,1);
@@ -220,7 +220,7 @@ void lcdPrint(uint16_t moist, int8_t temp1, int8_t temp2, uint8_t humi1, uint8_t
   lcd.print(humi_print);
   lcd.print("%");
 
-  delay(5000);
+  delay(3000);
   
 }
 
@@ -251,17 +251,15 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
   
   //센서값 측정
   uint16_t cdsValue = analogRead(cdsPin);                                  // 조도센서 값 측정: 0(밝음) ~ 1023(어두움)
   uint16_t soilmoistureValue = analogRead(soilmoisturePin);                // 토양수분 값 측정: 0(습함) ~ 1023(건조)
-  uint8_t moist_per = map(soilmoistureValue, 170, 1023, 100, 0);             // 센서 값을 퍼센트로 변경
+  uint8_t moist_per = map(soilmoistureValue, 170, 1023, 100, 0);           // 센서 값을 퍼센트로 변경
   //공기 중 습도 값 측정
   uint8_t humiValue1 = (uint8_t)dht.readHumidity();
   uint8_t humiValue2 = (uint8_t)dht2.readHumidity();
   //공기 중 온도 값 측정
-  //unsigned char tmpValue1 = dht.readTemperature();
   int8_t tempValue1 = (int8_t)dht.readTemperature();
   int8_t tempValue2 = (int8_t)dht2.readTemperature();
   // 데이터 전송할 url
@@ -271,7 +269,7 @@ void loop() {
   //LCD에 현재 온습도 상태 표시
   lcdPrint(moist_per, tempValue1, tempValue2, humiValue1, humiValue2);
 
-  //이전 온도값이 지금 온도값이랑 다르다면 서버에 전체 데이터 송부
+  //이전 온도값이 지금 온도값과 5도 차이가 난다면 센싱 값 전송
   ///////////////////////////////////////////////////////////////////////////////
   differenceTemp = beforeTemp - tempValue1;
   if(abs(differenceTemp) >= 5){

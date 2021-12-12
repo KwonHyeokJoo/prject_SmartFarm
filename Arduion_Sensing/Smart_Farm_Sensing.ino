@@ -6,10 +6,13 @@
 
 //센서 핀 설정
 #define cdsPin A1                   // 조도센서 모듈 핀
+#define soilmoisturePin A0          // 토양수분센서 핀
 #define DHTPIN 4                    // 온습도센서 모듈 핀 1
 #define DHTPIN2 7                   // 온습도센서 모듈 핀 2
 #define DHTTYPE DHT11               // 온습도 센서타입 설정
-#define soilmoisturePin A0          // 토양수분센서 핀
+
+#define TIMEOUT 10000               // TimeOut 시간 설정
+#define MAX_BYTE 50                // 최대로 받을 byte
 
 //와이파이 통신을 위해 객체생성?
 SoftwareSerial mySerial(2,3);
@@ -27,157 +30,142 @@ const String password = "raspberry";
 const String ip = "192.168.1.1";
 const String port = "80";
 
-//토양 %, 온도, 습도 출력을 위한 문자열
-//char moist_print[5];
-//char temp_print[5];
-//char humi_print[5];
-
-//입력된 값 찾기위해 버퍼 선언
-char combuffer[50];
-
 //LCD에 온습도 출력을 변환시키기 위해 선언
-uint16_t standPrint = 0;
-uint8_t stopPrint = 1;
-
-/*
-int fun( int num ) {
-  time = millis();
-  while( mySerial.available() == 0 ) {
-    if( (millis() - time) > (첫 응답 바이트 받는데 걸리는 시간) ) {
-      return -1;
-    }
-  }
-  
-  for( i = 0; i < num; i++){
-    if(mySerial.available()) {
-      time = millis();
-      combuffer[j] = mySerial.read();
-      Serial.write(combuffer[j]);
-    }
-    whie( (millis() - time) > (1바이트 받는데 걸리는 시간) ) {
-      return;
-    }
-  }
-}
-*/
+uint64_t startPrint = millis();
 
 //wifi connection
 void connectWifi() {
   
-  //Wifi 초기화
-  Serial.println(F("\r\n---------- AT+RST ----------\r\n"));
-  mySerial.println(F("AT+RST"));
-  serialPrint(1000);
+  while (1){
+    //Wifi 초기화
+    Serial.println(F("\r\n---------- AT+RST ----------\r\n"));
+    mySerial.println(F("AT+RST"));
+    responseSerial("IP");
   
-  //모드 설정(1로 설정)
-  Serial.println(F("\r\n---------- AT+CWMODE ----------\r\n"));
-  mySerial.println(F("AT+CWMODE=1"));
-  serialPrint(500);
-  
-  //wifi 연결
-  Serial.println(F("\r\n---------- AT+CWJAP_DEF ----------\r\n"));
-  mySerial.print(F("AT+CWJAP_DEF=\""));
-  mySerial.print(ssid);
-  mySerial.print(F("\",\""));
-  mySerial.print(password);
-  mySerial.println(F("\""));
-  serialPrint(500);
-
-  //연결된 ip 출력
-  Serial.print(F("\r\n---------- AT+CIFSR ----------\r\n"));
-  mySerial.println(F("AT+CIFSR"));
-  serialPrint(500);
-
-}
-
-//Restart when wifi connection faill
-void connectFailRestart(){
-  int i;
-  int stopAndGo = 1;
-
-  while(stopAndGo){
-    Serial.print(F("\r\n---------- AT+CIPSTATUS ----------\r\n"));
-    mySerial.println(F("AT+CIPSTATUS"));
-    serialPrint(10);
     
-    for(i=0; combuffer[i]!=NULL; i++){
-      if(combuffer[i] == ':') break;
+    //모드 설정(1로 설정)
+    Serial.println(F("\r\n---------- AT+CWMODE ----------\r\n"));
+    mySerial.println(F("AT+CWMODE=1"));
+    responseSerial("OK");
+  
+    //wifi 연결
+    Serial.println(F("\r\n---------- AT+CWJAP_DEF ----------\r\n"));
+    mySerial.print(F("AT+CWJAP_DEF=\""));
+    mySerial.print(ssid);
+    mySerial.print(F("\",\""));
+    mySerial.print(password);
+    mySerial.println(F("\""));
+    responseSerial("OK");
+    
+    //연결된 ip 출력
+    Serial.println(F("\r\n---------- AT+CIFSR ----------\r\n"));
+    mySerial.println(F("AT+CIFSR"));
+    responseSerial("OK");
+
+    if(nowStatus() == 5){
+      continue;
     }
-    
-    switch(combuffer[i+1]){
-      case '2':
-        Serial.print(F("\r\n---------- case 2 ----------\r\n"));
-        stopAndGo = 0;
-        break;
-      case '3':
-        Serial.print(F("\r\n---------- case 3 ----------\r\n"));
-        mySerial.println(F("AT+CIPCLOSE"));
-        serialPrint(100);
-        break;
-      case '4':
-        Serial.print(F("\r\n---------- case 4 ----------\r\n"));
-        stopAndGo = 0;
-        break;
-      case '5':
-        Serial.print(F("\r\n---------- case 5 ----------\r\n"));
-        connectWifi();
-        break;
-      default:
-        Serial.print(F("\r\n----- default -----\r\n"));
+    else {
+      break;
     }
   }
+}
+
+uint8_t nowStatus(){
+  uint8_t connectionStatus;
+
+  Serial.println(F("\r\n---------- AT+CIPSTATUS ----------\r\n"));
+  mySerial.println(F("AT+CIPSTATUS"));
+  
+  mySerial.println(F("AT+CIPSTATUS"));
+  if(mySerial.find(":")){
+    connectionStatus = mySerial.parseInt();
+  }
+
+  return connectionStatus;
 }
 
 //Sensor data send
 void dataSend(String url){
-  int i,j;
-  
-  Serial.print(F("\r\n---------- AT+CIPMUX ----------\r\n"));
-  mySerial.println(F("AT+CIPMUX=0"));
-  serialPrint(50);
+  uint8_t startStop = 1;
 
-  Serial.print(F("\r\n---------- AT+CIPSTART ----------\r\n"));
-  mySerial.print(F("AT+CIPSTART=\"TCP\",\""));
-  mySerial.print(ip);
-  mySerial.print(F("\","));
-  mySerial.println(port);
-  serialPrint(50);
+  while(1){
+    Serial.print(F("\r\n----- AT+CIPMUX -----\r\n"));
+    mySerial.println(F("AT+CIPMUX=0"));
+    responseSerial("OK");
 
-  Serial.print(F("\r\n---------- AT+CIPSEND ----------\r\n"));
-  mySerial.print(F("AT+CIPSEND="));
-  mySerial.println(String(url.length()));
-  serialPrint(50);
+    while (1){
+      Serial.print(F("\r\n----- AT+CIPSTART -----\r\n"));
+      mySerial.print(F("AT+CIPSTART=\"TCP\",\""));
+      mySerial.print(ip);
+      mySerial.print(F("\","));
+      mySerial.println(port);
+      responseSerial("OK");
 
-  for(j=0; combuffer[j]!=NULL; j++){
-    
-  }
-  
-  for(i=0; i<j-1; i++){
-    if(combuffer[i] == 'p'){
-      if(combuffer[i+1] == '.'){
-        connectFailRestart();
+      //TCP가 연결 되었으면 while문 break; 아니면 다시 연결 시도
+      if(nowStatus() == 3){
         break;
       }
+      else {
+        continue;
+      }
     }
-   }
-   
-  Serial.print(F("\r\n---------- GET ----------\r\n"));
-  mySerial.println(url);
-  serialPrint(800);
   
-}
+    Serial.print(F("\r\n----- AT+CIPSEND -----\r\n"));
+    mySerial.print(F("AT+CIPSEND="));
+    mySerial.println(url.length());
+    responseSerial("OK\r\n>");
+  
+    Serial.print(F("\r\n---------- GET ----------\r\n"));
+    mySerial.println(url);
+    responseSerial("CLOSED");
 
-void serialPrint(uint16_t second){
-  int i, j;
-
-  for(i=0; i<second; i++){
-    delay(10);
-
-    for(j=0; mySerial.available(); j++){
-      combuffer[j] = mySerial.read();
-      Serial.write(combuffer[j]);
+    startStop = nowStatus();
+    
+    if(startStop == 5){
+      return;
+    }
+    else if(startStop == 2) {
+      return;
+    }
+    else if(startStop == 3){
+      continue;
+    }
+    else {
+      break;
     }
   }
+}
+
+//Serial 출력 및 Command 정상으로 들어갔나 확인
+void responseSerial(char* keyword){
+  uint8_t cutChar = 0;
+  uint8_t keywordLength = 0;
+  unsigned long startTime;
+  int i;
+
+  for(i=0; keyword[i] != NULL; i++){
+    keywordLength++;
+  }
+
+  startTime = millis();
+  while((millis() - startTime) < TIMEOUT){
+    if(mySerial.available()){
+      char ch = mySerial.read();
+      Serial.write(ch);
+
+      if(ch == keyword[cutChar]){
+        cutChar++;
+        if(cutChar == keywordLength){
+          return;
+        }
+      }
+      else {
+        cutChar = 0;
+      }
+    }
+  }
+  return;
 }
 
 //현재 온도 출력
@@ -255,50 +243,13 @@ void printMoist(uint16_t moist){
     lcd.setCursor(14,0);
     lcd.write(6);
   }
-/*
-  //LCD에 온도값 출력
-  lcd.setCursor(1,1);
-  lcd.write(0);
-  sprintf(temp_print, "%02d", temp1);
-  lcd.setCursor(3,1);
-  lcd.print(temp_print);
-  lcd.write(1);
-
-  lcd.setCursor(7,1);
-  lcd.write(0);
-  sprintf(temp_print, "%02d", temp2);
-  lcd.setCursor(9,1);
-  lcd.print(temp_print);
-  lcd.write(1);
-
-  delay(3000);
-  
-  //LCD에 습도값 출력
-  lcd.setCursor(1,1);
-  lcd.write(2);
-  sprintf(humi_print, "%02d", humi1);
-  lcd.setCursor(3,1);
-  lcd.print(humi_print);
-  lcd.print("%");
-  
-  lcd.setCursor(7,1);
-  lcd.write(2);
-  sprintf(humi_print, "%02d", humi2);
-  lcd.setCursor(9,1);
-  lcd.print(humi_print);
-  lcd.print("%");
-
-  delay(3000);
-
-*/
 }
 
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(9600);
   mySerial.begin(9600);
 
-  Serial.println("----- STRAT -----");
+  Serial.println(F("----- STRAT -----"));
 
   //LCD 초기화
   lcd.begin();
@@ -320,7 +271,6 @@ void setup() {
 }
 
 void loop() {
-  
   //센서값 측정
   uint16_t cdsValue = analogRead(cdsPin);                                  // 조도센서 값 측정: 0(밝음) ~ 1023(어두움)
   uint16_t soilmoistureValue = analogRead(soilmoisturePin);                // 토양수분 값 측정: 0(습함) ~ 1023(건조)
@@ -333,17 +283,21 @@ void loop() {
   int8_t tempValue2 = (int8_t)dht2.readTemperature();
   // 데이터 전송할 url
   String url;
+  uint64_t endPrint;
 
   //LCD에 현재 온습도 상태 표시
   printMoist(moist_per);
 
-  if(standPrint < stopPrint){
+  endPrint = millis();
+  if((endPrint - startPrint) <= 5000){
     printTemp(tempValue1, tempValue2);
   }
-  else {
+  else if((endPrint - startPrint) <= 9000){
     printHumi(humiValue1, humiValue2);
   }
-
+  else {
+    startPrint = endPrint;
+  }
 
   //온도값 전송
   ///////////////////////////////////////////////////////////////////////////////
@@ -352,16 +306,7 @@ void loop() {
   dataSend(url);
   ///////////////////////////////////////////////////////////////////////////////
 
-  if(stopPrint == standPrint){
-    standPrint = 0;
+  if(nowStatus() == 5){
+    connectWifi();
   }
-  else {
-    standPrint++;
-  }
-  
-  //Restart when wifi connection faill
-  connectFailRestart();
-  
-//  delay(500);
-
 }

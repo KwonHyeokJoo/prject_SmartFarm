@@ -6,36 +6,90 @@ tmp2 = 0
 hum1 = 0
 hum2 = 0
 lux = 0
+tmpTarget = 30 #목표온도기준값
+humTarget = 40 #목표습도기준값
 
 app = Flask(__name__)
 
-@app.route('/tmp/<name>')
-def hello_tmp(name):
-	global tmp1
-	tmp1=name
-	return '현재온도 %s 도' % tmp1
+@app.route('/tmp1')
+def hello_tmp1():
+	return '현재온도@%s' % tmp1
+
+@app.route('/tmp2')
+def hello_tmp2():
+	return '현재온도@%s' % tmp2
 
 @app.route('/tmpUp')
 def tmpUp():
-	global tmp1
-	tmp1+=1
-	return '현재온도 %s도'% tmp1
+	global tmpTarget 
+	tmpTarget = tmpTarget+1
+	return '목표온도@%s'% tmpTarget
 
-@app.route('/hum/<name>')
-def hello_hum(name):
-	return '현재습도  %s' % name
+@app.route('/tmpDown')
+def tmpDown():
+        global tmpTarget
+        tmpTarget = tmpTarget-1
+        return '목표온도@%s'% tmpTarget
 
-@app.route('/lux/<name>')
-def hello_lux(name):
-	return '현재조도 %s lux' % name
+@app.route('/hum1')
+def hello_hum1():
+	return '현재습도@%s' % hum1
 
-@app.route('/grd/<name>')
-def hello_grd(name):
-	return '현재토양 %s 정도' % name
+@app.route('/hum2')
+def hello_hum2():
+	return '현재습도@%s' % hum2
 
-@app.route('/control/<name>')
-def hello_control(name):
-	return 'control %s' % tmp1
+@app.route('/humUp')
+def humUp():
+	global humTarget
+	humTarget = humTarget + 1
+	return '목표습도@%s' % humTarget
+
+@app.route('/humDown')
+def humDown():
+        global humTarget
+        humTarget = humTarget - 1
+        return '목표습도@%s' % humTarget
+
+@app.route('/lux')
+def hello_lux():
+	return '현재조도 @%s' % lux
+
+@app.route('/grd')
+def hello_grd():
+	return '현재토양 @%s' % mos
+
+@app.route('/manual')
+def hello_manual():
+	return '@0'
+
+@app.route('/auto')
+def hello_automatic():
+	return '@1'
+
+@app.route('/switchOn')
+def switchOn():
+	return '@1'
+
+@app.route('/switchOff')
+def switchOff():
+	return '@0'
+
+@app.route('/fanAuto')
+def fanAuto():
+	return '@1'
+
+@app.route('/fanManual')
+def fanManual():
+	return '@0'
+
+@app.route('/heaterAuto')
+def heaterAuto():
+	return '@1'
+
+@app.route('/heaterManual')
+def heaterManual():
+	return '@0'
 
 @app.route('/')
 def home():

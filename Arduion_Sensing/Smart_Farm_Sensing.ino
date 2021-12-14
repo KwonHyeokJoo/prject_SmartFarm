@@ -10,15 +10,17 @@
 #define DHTPIN 4                    // 온습도센서 모듈 핀 1
 #define DHTPIN2 7                   // 온습도센서 모듈 핀 2
 #define DHTTYPE DHT11               // 온습도 센서타입 설정
-
 #define TIMEOUT 10000               // TimeOut 시간 설정
-#define MAX_BYTE 50                // 최대로 받을 byte
+#define LCD_X 16                    // LCD X축
+#define LCD_Y 2                     // LCD Y축
+#define WIFI_TX 2                   // WIFI TX
+#define WIFI_RX 3                   // WIFI RX
 
 //와이파이 통신을 위해 객체생성?
-SoftwareSerial mySerial(2,3);
+SoftwareSerial mySerial(WIFI_TX,WIFI_RX);
 
 //LCD 및 온습도 센서 객체 생성 
-LiquidCrystal_I2C lcd(0x27, 16, 2);
+LiquidCrystal_I2C lcd(0x27, LCD_X, LCD_Y);
 DHT dht(DHTPIN, DHTTYPE);
 DHT dht2(DHTPIN2, DHTTYPE);
 
@@ -47,37 +49,39 @@ void connectWifi() {
     Serial.println(F("\r\n---------- AT+CWMODE ----------\r\n"));
     mySerial.println(F("AT+CWMODE=1"));
     responseSerial("OK");
-  
-    //wifi 연결
-    Serial.println(F("\r\n---------- AT+CWJAP_DEF ----------\r\n"));
-    mySerial.print(F("AT+CWJAP_DEF=\""));
-    mySerial.print(ssid);
-    mySerial.print(F("\",\""));
-    mySerial.print(password);
-    mySerial.println(F("\""));
-    responseSerial("OK");
-    
-    //연결된 ip 출력
-    Serial.println(F("\r\n---------- AT+CIFSR ----------\r\n"));
-    mySerial.println(F("AT+CIFSR"));
-    responseSerial("OK");
 
-    if(nowStatus() == 5){
-      continue;
-    }
-    else {
-      break;
+    while(1){
+      //wifi 연결
+      Serial.println(F("\r\n---------- AT+CWJAP_DEF ----------\r\n"));
+      mySerial.print(F("AT+CWJAP_DEF=\""));
+      mySerial.print(ssid);
+      mySerial.print(F("\",\""));
+      mySerial.print(password);
+      mySerial.println(F("\""));
+      responseSerial("OK");
+      
+      //연결된 ip 출력
+      Serial.println(F("\r\n---------- AT+CIFSR ----------\r\n"));
+      mySerial.println(F("AT+CIFSR"));
+      responseSerial("OK");
+
+      //2 반환시 ip할당 성공, 5 반환시 ip할당 실패로 연결 재시도
+      if(nowStatus() == 5){
+        continue;
+      }
+      else {
+        return;
+      }
     }
   }
 }
-
+// 현재 상태 출력
 uint8_t nowStatus(){
   uint8_t connectionStatus;
 
   Serial.println(F("\r\n---------- AT+CIPSTATUS ----------\r\n"));
   mySerial.println(F("AT+CIPSTATUS"));
-  
-  mySerial.println(F("AT+CIPSTATUS"));
+  // ':' 가 들어오면 뒤에 숫자 값을 받아 리턴
   if(mySerial.find(":")){
     connectionStatus = mySerial.parseInt();
   }
@@ -121,7 +125,9 @@ void dataSend(String url){
     responseSerial("CLOSED");
 
     startStop = nowStatus();
-    
+
+    //5: ip할당 실패, 2: ip할당 성공했으나, 중간에 끊긴것임으로 함수 종료
+    //3, send 실패 다시 시도, 4 : 정상 send 후 종료
     if(startStop == 5){
       return;
     }
@@ -289,23 +295,27 @@ void loop() {
   printMoist(moist_per);
 
   endPrint = millis();
+  //5초 동안 LCD에 온도 표시
   if((endPrint - startPrint) <= 5000){
     printTemp(tempValue1, tempValue2);
   }
+  //4초 동안 LCD에 습도 표시
   else if((endPrint - startPrint) <= 9000){
     printHumi(humiValue1, humiValue2);
   }
+  //습도 표시 이후에 온도 표기를 위해 startPrint에 endPrint 시간 data 저장
   else {
     startPrint = endPrint;
   }
 
-  //온도값 전송
+  //Sensing data 전송
   ///////////////////////////////////////////////////////////////////////////////
   url = "GET /"+String(moist_per)+"/"+tempValue1+"/"+tempValue2+"/"+humiValue1+
       "/"+humiValue2+"/"+String(cdsValue)+" HTTP/1.1\r\nHost: " + ip +"\r\n\r\n";
   dataSend(url);
   ///////////////////////////////////////////////////////////////////////////////
 
+  //ip 할당 실패시(wifi 끊겼을시) 다시 연결 시도
   if(nowStatus() == 5){
     connectWifi();
   }

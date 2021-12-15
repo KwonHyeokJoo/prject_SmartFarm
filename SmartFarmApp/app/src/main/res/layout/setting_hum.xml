@@ -18,7 +18,7 @@
             android:text="현재 습도"
             android:textSize="30dp" />
         <TextView
-            android:id="@+id/tvTemH"
+            android:id="@+id/tvHum"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="30%"
@@ -104,5 +104,6 @@
             android:layout_height="wrap_content"
             android:text="종료" />
     </LinearLayout>
+
 
 </LinearLayout>

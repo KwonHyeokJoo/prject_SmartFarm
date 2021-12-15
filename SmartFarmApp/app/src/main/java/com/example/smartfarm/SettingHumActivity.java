@@ -24,14 +24,23 @@ public class SettingHumActivity extends AppCompatActivity {
         Button btnReturn2, btnHumDown, btnHumUp;
         NumberPicker npcTarHum;
 
+        tvHum = (TextView) findViewById(R.id.tvHum);
+        tvHum.setText(Integer.toString(CurrentHum1) + "%\n" + Integer.toString(CurrentHum2) + "%\n");
+
 
         tvTargetH = (TextView) findViewById(R.id.tvTargetH);
 
         // 목표 습도값을 설정
         npcTarHum = (NumberPicker) findViewById(R.id.npcTarHum);
-        npcTarHum.setMinValue(0);  // 습도의 최솟값이 0
-        npcTarHum.setMaxValue(100);     // 습도의 최댓값이 100
+        npcTarHum.setMinValue(0);       // 습도의 최솟값이 0
+        npcTarHum.setMaxValue(100);      // 습도의 최댓값이 100
         npcTarHum.setValue(targetHum);
+        /*npcTarHum.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+                targetHum = newVal;
+            }
+        });*/
 
         // + 버튼을 누르면 값이 1씩 증가
         btnHumUp = (Button) findViewById(R.id.btnHumUp);
@@ -57,6 +66,9 @@ public class SettingHumActivity extends AppCompatActivity {
         btnReturn2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Intent outIntent = new Intent(getApplicationContext(), MainActivity.class);
+                outIntent.putExtra("TargetTemp", targetHum);
+                setResult(RESULT_OK, outIntent);
                 finish();
             }
         });

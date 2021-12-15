@@ -1,2 +1,2 @@
-rootProject.name = "SampleHttp"
+rootProject.name = "SmartFarm"
 include ':app'

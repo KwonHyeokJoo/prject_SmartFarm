@@ -32,15 +32,15 @@ public class SettingTemActivity extends AppCompatActivity {
 
         // 목표 온도값을 설정
         npcTarTmp = (NumberPicker) findViewById(R.id.npcTarTmp);
-        npcTarTmp.setMinValue(0);
-        npcTarTmp.setMaxValue(100);
+        npcTarTmp.setMinValue(0);   // 온도의 최소값 0도
+        npcTarTmp.setMaxValue(50);  // 온도의 최댓값 50도
         npcTarTmp.setValue(targetTem);
-        npcTarTmp.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+        /*npcTarTmp.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
             @Override
             public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
                 targetTem = newVal;
             }
-        });
+        });*/
 
         // + 버튼을 누르면 값이 1씩 증가
         btnTmpUp = (Button) findViewById(R.id.btnTmpUp);

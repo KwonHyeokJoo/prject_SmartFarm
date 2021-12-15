@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     Handler handler = new Handler();
     int targetTem, targetHum;
     int curTem1, curTem2, curHum1, curHum2;
+    boolean ConnectionState;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -206,12 +207,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 // 반복실행할 구문
-                targetTem++;
-                targetHum++;
-                curTem1++;
-                curTem2++;
-                curHum1++;
-                curHum2++;
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -233,9 +228,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
     // 서버 요청하기
     public void getState(String urlStr) {
         StringBuilder output = new StringBuilder();
+        ConnectionState = false;
         try {
             URL url = new URL(urlStr);
 
@@ -258,16 +255,20 @@ public class MainActivity extends AppCompatActivity {
                 }
                 reader.close();
                 conn.disconnect();
+                ConnectionState = true;
             }
         } catch (Exception ex) {
             Toast.makeText(getApplicationContext(), "오류 발생", Toast.LENGTH_SHORT).show();
+            ConnectionState = false;
         }
-        String state = output.toString();
-        String stateArray[] = state.split("/");
+        if(ConnectionState == true){
+            String state = output.toString();
+            String stateArray[] = state.split("/");
 
-        curTem1 = Integer.parseInt(stateArray[0]);
-        curTem2 = Integer.parseInt(stateArray[1]);
-        curHum1 = Integer.parseInt(stateArray[2]);
-        curHum2 = Integer.parseInt(stateArray[3]);
+            curTem1 = Integer.parseInt(stateArray[0]);
+            curTem2 = Integer.parseInt(stateArray[1]);
+            curHum1 = Integer.parseInt(stateArray[2]);
+            curHum2 = Integer.parseInt(stateArray[3]);
+        }
     }
 }

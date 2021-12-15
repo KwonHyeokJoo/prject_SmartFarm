@@ -5,8 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".MainActivity" >
-
+    tools:context=".MainActivity">
 
     <Switch
         android:id="@+id/control"
@@ -43,9 +42,11 @@
             android:layout_rowSpan="1"
             android:layout_rowWeight="1"
             android:layout_columnWeight="1"
-            android:text="온도"
+            android:text="현재온도\n목표온도"
             android:gravity="center"
-            android:background="?attr/selectableItemBackground"/>
+            android:background="?attr/selectableItemBackground"
+
+            />
 
         <TextView
             android:id="@+id/btnHum"
@@ -55,7 +56,7 @@
             android:layout_rowSpan="1"
             android:layout_rowWeight="1"
             android:layout_columnWeight="1"
-            android:text="습도"
+            android:text="현재습도\n목표습도"
             android:gravity="center"
             android:background="?attr/selectableItemBackground"/>
 
@@ -69,12 +70,12 @@
             android:layout_rowSpan="1"
             android:layout_rowWeight="1"
             android:layout_columnWeight="1"
-            android:text="토양"
+            android:text="팬"
             android:gravity="center"
             android:background="?attr/selectableItemBackground"/>
 
         <TextView
-            android:id="@+id/btnTmpUp"
+            android:id="@+id/btnHeat"
             android:layout_column="1"
             android:layout_gravity="fill_vertical"
             android:layout_row="3"
@@ -95,13 +96,5 @@
             android:text="우측개폐기"
             android:gravity="center"
             android:background="?attr/selectableItemBackground"/>
-
-
     </GridLayout>
-
-
-
-
-
-
 </LinearLayout>

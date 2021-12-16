@@ -21,9 +21,9 @@ import java.net.URL;
 public class SettingTemActivity extends AppCompatActivity {
     boolean ConnectionState;
     public TextView tvTargetT, tvTem;// 온도
-    Button btnReturn1, btnTmpDown, btnTmpUp;
+    Button btnReturn1, btnTmpDown, btnTmpUp, btnApply1;
     NumberPicker npcTarTmp;
-    int CurrentTem1, CurrentTem2, targetTem;
+    int CurrentTem1, CurrentTem2, targetTemp;
     public static Context context_setTem;
     String urlsetTem;
 
@@ -42,6 +42,7 @@ public class SettingTemActivity extends AppCompatActivity {
 //        CurrentTem2 = intent.getIntExtra("CurrentTem2",30);   // 현재 온도2
         CurrentTem1 = ((MainActivity)MainActivity.context_main).curTem1;
         CurrentTem2 = ((MainActivity)MainActivity.context_main).curTem2;
+        targetTemp = ((MainActivity)MainActivity.context_main).targetTem;
 
         tvTem = (TextView) findViewById(R.id.tvTem);
         tvTem.setText("센서1 : "+ Integer.toString(CurrentTem1) + "도\n센서2 : " + Integer.toString(CurrentTem2) + "도\n");
@@ -53,13 +54,13 @@ public class SettingTemActivity extends AppCompatActivity {
         npcTarTmp = (NumberPicker) findViewById(R.id.npcTarTmp);
         npcTarTmp.setMinValue(0);   // 온도의 최소값 0도
         npcTarTmp.setMaxValue(50);  // 온도의 최댓값 50도
-        npcTarTmp.setValue(targetTem);
-        /*npcTarTmp.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+        npcTarTmp.setValue(targetTemp);
+        npcTarTmp.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
             @Override
             public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
-                targetTem = newVal;
+                targetTemp = newVal;
             }
-        });*/
+        });
 
         // + 버튼을 누르면 값이 1씩 증가
         btnTmpUp = (Button) findViewById(R.id.btnTmpUp);
@@ -79,14 +80,25 @@ public class SettingTemActivity extends AppCompatActivity {
             }
         });
 
+        //적용 버튼
+        btnApply1 = (Button) findViewById(R.id.btnApply1);
+        btnApply1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                targetTemp = npcTarTmp.getValue();
+                urlsetTem = "http://192.168.0.38/setTargetTmp/" + Integer.toString(targetTemp);
+                Toast.makeText(getApplicationContext(), urlsetTem, Toast.LENGTH_SHORT);
+                request(urlsetTem);
+            }
+        });
+
         // 종료 버튼
         btnReturn1 = (Button) findViewById(R.id.btnReturn1);
         btnReturn1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent outIntent = new Intent(getApplicationContext(), MainActivity.class);
-                targetTem = npcTarTmp.getValue();
-                outIntent.putExtra("TargetTemp", targetTem);
+                outIntent.putExtra("TargetTemp", targetTemp);
                 setResult(RESULT_OK, outIntent);
                 finish();
             }
@@ -97,13 +109,10 @@ public class SettingTemActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         ((MainActivity)MainActivity.context_main).stTemOn = false;
-        urlsetTem = new String("192.168.0.26/setTargetTem/" + Integer.toString(targetTem));
-        request(urlsetTem);
     }
 
     public void request(String urlStr) {
         StringBuilder output = new StringBuilder();
-        ConnectionState = false;
         try {
             URL url = new URL(urlStr);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -123,13 +132,9 @@ public class SettingTemActivity extends AppCompatActivity {
                         break;
                     }
                     output.append(line + "\n");
-
                 }
-                //reader.close();
-
                 conn.disconnect();
                 reader.close();
-                ConnectionState = true;
             }
         } catch (Exception ex) {
             Log.d("test" , "목표 온도를 다시 설정해 주세요.\nError: " + ex.getMessage());

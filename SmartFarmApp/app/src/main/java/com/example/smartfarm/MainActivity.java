@@ -141,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
         btnLeftDoor.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 /*final String urlStr = "http://192.168.1.1/btnLeftDoor"; //editText.getText().toString();
 
                 new Thread(new Runnable() {

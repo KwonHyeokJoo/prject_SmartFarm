@@ -95,6 +95,11 @@
         android:layout_height="match_parent"
         android:gravity="bottom|right">
         <Button
+            android:id="@+id/btnApply1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="적용" />
+        <Button
             android:id="@+id/btnReturn1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

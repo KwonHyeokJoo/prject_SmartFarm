@@ -2,7 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.smartfarm">
 
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
+        android:usesCleartextTraffic="true"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -16,9 +19,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity   android:name=".SettingTemActivity" android:label="온도 설정" />
-        <activity   android:name=".SettingHumActivity" android:label="습도 설정" />
-        <activity   android:name=".SettingFanActivity" android:label="팬 설정" />
+        <activity   android:name=".SettingTemActivity" android:label="온도 설정" android:exported="true"/>
+        <activity   android:name=".SettingHumActivity" android:label="습도 설정" android:exported="true"/>
+        <activity   android:name=".SettingFanActivity" android:label="팬 설정" android:exported="true"/>
+        <activity   android:name=".SettingHeatActivity" android:label="열풍기 설정"  android:exported="true"/>
     </application>
 
 </manifest>

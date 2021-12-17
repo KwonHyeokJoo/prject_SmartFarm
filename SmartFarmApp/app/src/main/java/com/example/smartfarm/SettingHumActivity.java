@@ -1,31 +1,46 @@
 package com.example.smartfarm;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.view.View;
 import android.widget.Button;
 import android.widget.NumberPicker;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
 public class SettingHumActivity extends AppCompatActivity {
+
+    boolean ConnectionState;
+    public TextView tvTargetH, tvHum;// 습도
+    Button btnReturn2, btnHumDown, btnHumUp;
+    NumberPicker npcTarHum;
+    int CurrentHum1, CurrentHum2, targetHum;
+    public static Context context_setHum;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.setting_hum);
 
-        Intent intent = getIntent();
-        int targetHum = intent.getIntExtra("TargetHum", 30);    // 목표 습도
-        int CurrentHum1 = intent.getIntExtra("CurrentHum1",30);   // 현재 습도1
-        int CurrentHum2 = intent.getIntExtra("CurrentHum2",30);   // 현재 습도2
+        context_setHum = this;
 
-        TextView t1, tvTargetH, tvCurH, tvHum;// 습도
-        Button btnReturn2, btnHumDown, btnHumUp;
-        NumberPicker npcTarHum;
+        Intent intent = getIntent();
+        targetHum = intent.getIntExtra("TargetHum", 30);    // 목표 습도
+        CurrentHum1 = intent.getIntExtra("CurrentHum1",30);   // 현재 습도1
+        CurrentHum2 = intent.getIntExtra("CurrentHum2",30);   // 현재 습도2
 
         tvHum = (TextView) findViewById(R.id.tvHum);
-        tvHum.setText(Integer.toString(CurrentHum1) + "%\n" + Integer.toString(CurrentHum2) + "%\n");
+        tvHum.setText("센서1 : " + Integer.toString(CurrentHum1) + "%\n센서2 : " + Integer.toString(CurrentHum2) + "%\n");
 
 
         tvTargetH = (TextView) findViewById(R.id.tvTargetH);
@@ -67,10 +82,17 @@ public class SettingHumActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent outIntent = new Intent(getApplicationContext(), MainActivity.class);
+                targetHum = npcTarHum.getValue();
                 outIntent.putExtra("TargetTemp", targetHum);
                 setResult(RESULT_OK, outIntent);
                 finish();
             }
         });
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        ((MainActivity)MainActivity.context_main).stHumOn = false;
     }
 }

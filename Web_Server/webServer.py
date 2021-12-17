@@ -22,6 +22,25 @@ app = Flask(__name__)
 def get_state():
 	return '%s/%s/%s/%s/\r\n' % (tmp1, tmp2, hum1, hum2)
 
+@app.route('/setTargetTmp/<tmp>')
+def setTargetTmp(tmp):
+	global tmpTarget
+	tmpTarget = tmp
+	return 'Ok'
+
+@app.route('/getTargetTmp')
+def getTargetTmp():
+	return '@%s' % tmpTarget
+
+@app.route('/setTargetHum/<hum>')
+def setTargetHum(hum):
+	humTarget = hum
+	return 'Ok'
+
+@app.route('/getTargetHum')
+def getTargetHum():
+	return '@%s' % humTarget
+
 @app.route('/tmp1')
 def hello_tmp1():
 	return '현재온도@%s' % tmp1

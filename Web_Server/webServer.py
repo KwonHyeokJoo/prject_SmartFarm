@@ -8,8 +8,38 @@ hum2 = 0
 lux = 0
 tmpTarget = 30 #목표온도기준값
 humTarget = 40 #목표습도기준값
+manualControl = 0 #수동/자동제어
+fanState = 0 #팬 온/오프
+fanSpeed = 0 #팬속도제어
+leftWindow = 0 #왼쪽개폐기 온/오프
+rightWindow = 0 #오른쪽개폐기 온/오프
+heaterState = 0 #히터 온/오프
+
 
 app = Flask(__name__)
+
+@app.route('/getState')
+def get_state():
+	return '%s/%s/%s/%s/\r\n' % (tmp1, tmp2, hum1, hum2)
+
+@app.route('/setTargetTmp/<tmp>')
+def setTargetTmp(tmp):
+	global tmpTarget
+	tmpTarget = tmp
+	return 'Ok'
+
+@app.route('/getTargetTmp')
+def getTargetTmp():
+	return '@%s' % tmpTarget
+
+@app.route('/setTargetHum/<hum>')
+def setTargetHum(hum):
+	humTarget = hum
+	return 'Ok'
+
+@app.route('/getTargetHum')
+def getTargetHum():
+	return '@%s' % humTarget
 
 @app.route('/tmp1')
 def hello_tmp1():
@@ -59,37 +89,59 @@ def hello_lux():
 def hello_grd():
 	return '현재토양 @%s' % mos
 
-@app.route('/manual')
-def hello_manual():
-	return '@0'
 
-@app.route('/auto')
-def hello_automatic():
-	return '@1'
+#수동/자동제어
+@app.route('/setManualControl/<OnOff>')
+def setManualControl(OnOff):
+	manualControl = OnOff
 
-@app.route('/switchOn')
-def switchOn():
-	return '@1'
+@app.route('/getManualControl')
+def getManualControl():
+	return '@%s' %  manualControl
 
-@app.route('/switchOff')
-def switchOff():
-	return '@0'
+#팬 온/오프
+@app.route('/setFanOnOff/<OnOff>')
+def setFanOnOff(OnOff):
+	fanState = OnOff
 
-@app.route('/fanAuto')
-def fanAuto():
-	return '@1'
+@app.route('/getFanState')
+def getFanState():
+	return '@%s' % fanState
 
-@app.route('/fanManual')
-def fanManual():
-	return '@0'
+#팬 속도제어
+@app.route('/setFanSpeed/<speed>')
+def setFanSpeed(speed):
+	fanSpeed = speed
 
-@app.route('/heaterAuto')
-def heaterAuto():
-	return '@1'
+@app.route('/getFanSpeed')
+def getFanSpeed():
+	return '@%s' % fanSpeed
 
-@app.route('/heaterManual')
-def heaterManual():
-	return '@0'
+#개폐기 좌우 온/오프
+@app.route('/setLeftWindow/<OnOff>')
+def setLeftWindow(OnOff):
+	leftWindow = OnOff
+
+@app.route('/setRightWindow/<OnOff>')
+def setRightWindow(OnOff):
+	rightWindow = OnOff
+
+@app.route('/getLeftWindow')
+def getLeftWindow():
+	return '@%s' % leftWindow
+
+@app.route('/getRightWindow')
+def getRightWindow():
+	return '@%s' % rightWindow
+
+#히터 온/오프
+@app.route('/setHeaterOnOff/<OnOff>')
+def setHeaterOnOff(OnOff):
+	heaterState = OnOff
+
+@app.route('/getHeaterState')
+def getHeaterState():
+	return '@%s' % heaterState
 
 @app.route('/')
 def home():

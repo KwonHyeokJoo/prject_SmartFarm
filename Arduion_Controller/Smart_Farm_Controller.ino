@@ -23,8 +23,8 @@ Servo leftWindow;
 Servo rightWindow;
 
 // 와이파이 ID 및 Password 설정
-const String ssid = "Pi3-AP";
-const String password = "raspberry";
+const String ssid = "PI_AP";
+const String password = "12345678";
 
 // 서버 IP 설정 및 Port 설정
 const String ip = "192.168.1.1";
@@ -44,6 +44,14 @@ int16_t receiveValue[allDataCount] = {0,0,0,0,0,0,1,0,0,0,0,0};
 // 개폐기 초기 열림 각도 : 최대값으로 설정
 int8_t leftWindowAngle = WINDOW_ANGLE_MAX;
 int8_t rightWindowAngle = WINDOW_ANGLE_MAX;
+
+const uint64_t waitTime = 5000;
+
+uint64_t leftStartWindowTime = millis();
+uint64_t leftEndWindowTime = millis();
+uint64_t rightStartWindowTime = millis();
+uint64_t rightEndWindowTime = millis();
+
 
 //wifi connection
 void connectWifi() {
@@ -207,22 +215,22 @@ void receiveAllData(String returnType){
 }
 
 // Moter Control
-void moterControl(uint8_t moterStatus, uint8_t in_1, uint8_t in_2){
+void moterControl(uint8_t moterStatus, uint8_t pin_In_1, uint8_t pin_In_2){
   //정방향 작동시 입력값 1, 역방향 -1, 나머지 값 멈춤
   if(moterStatus == 1){
     Serial.print(F("\r\n === Moter forward === \r\n "));
-    digitalWrite(in_1, HIGH);
-    digitalWrite(in_2, LOW);
+    digitalWrite(pin_In_1, HIGH);
+    digitalWrite(pin_In_2, LOW);
   }
   else if(moterStatus == -1){
     Serial.print(F("\r\n === Moter reverse === \r\n "));
-    digitalWrite(in_1, LOW);
-    digitalWrite(in_2, HIGH);
+    digitalWrite(pin_In_1, LOW);
+    digitalWrite(pin_In_2, HIGH);
   }
   else {
     Serial.print(F("\r\n === Moter Off === \r\n"));
-    digitalWrite(in_1, LOW);
-    digitalWrite(in_2, LOW);
+    digitalWrite(pin_In_1, LOW);
+    digitalWrite(pin_In_2, LOW);
   }
 }
 
@@ -275,7 +283,6 @@ void setup() {
 
 void loop() {
   uint8_t manualControl;
-  
   int i,j;
   String url;
 
@@ -333,24 +340,76 @@ void loop() {
     }
 
     // Left Window 개폐
-    // 개폐기가 닫혀있거나, 또는 MAX(30)보다 적게 열려있을경우
-    // 최대 각도까지 열어준다
-    if(LeftControl == 1 && leftWindowAngle < WINDOW_ANGLE_MAX){
-      leftWindowAngle = WINDOW_ANGLE_MAX;
+    if(LeftControl == 0){
+      //close window control
+      if(leftWindowAngle == WINDOW_ANGLE_MIN){
+        Serial.print(F("\r\n\r\n === 이미 닫혀 있음 === \r\n\r\n"));
+      }
+      else {
+        //안되면 while 사용해야됨 
+        if((leftEndWindowTime - leftStartWindowTime) > (WINDOW_ANGLE_MAX *10)){
+          leftStartWindowTime = millis();
+          leftWindow.write(WINDOW_ANGLE_MIN);
+        }
+        else {
+          leftEndWindowTime = millis();
+        }
+      }
     }
-    else if(LeftControl == 0 && leftWindowAngle > WINDOW_ANGLE_MIN){
-      leftWindowAngle = WINDOW_ANGLE_MIN;
+    else if(LeftControl == 1){
+      //open window control
+      if(leftWindowAngle == WINDOW_ANGLE_MAX){
+        Serial.print(F("\r\n\r\n === 이미 열려 있음 === \r\n\r\n"));
+      }
+      else {
+        if((leftEndWindowTime - leftStartWindowTime) > (WINDOW_ANGLE_MAX *10)){
+          leftStartWindowTime = millis();
+          leftWindow.write(WINDOW_ANGLE_MAX);
+        }
+        else {
+          leftEndWindowTime = millis();
+        }
+      }
     }
-    leftWindow.write(leftWindowAngle);
+    else {
+      Serial.print(F("\r\n === LeftWindow err, return value err === \r\n"));
+    }
     
     //Right Window 개폐
-    if(RightControl == 1 && rightWindowAngle < WINDOW_ANGLE_MAX){
-      rightWindowAngle = WINDOW_ANGLE_MAX;
+    if(RightControl == 0){
+      //close window control
+      if(rightWindowAngle == WINDOW_ANGLE_MIN){
+        Serial.print(F("\r\n\r\n === 이미 닫혀 있음 === \r\n\r\n"));
+      }
+      else {
+        //안되면 while 사용해야됨 
+        if((rightEndWindowTime - rightStartWindowTime) > (WINDOW_ANGLE_MAX *10)){
+          rightStartWindowTime = millis();
+          rightWindow.write(WINDOW_ANGLE_MIN);
+        }
+        else {
+          rightEndWindowTime = millis();
+        }
+      }
     }
-    else if(RightControl == 0 && rightWindowAngle > WINDOW_ANGLE_MIN){
-      rightWindowAngle = WINDOW_ANGLE_MIN;
+    else if(RightControl == 1){
+      //open window control
+      if(rightWindowAngle == WINDOW_ANGLE_MAX){
+        Serial.print(F("\r\n\r\n === 이미 열려 있음 === \r\n\r\n"));
+      }
+      else {
+        if((rightEndWindowTime - rightStartWindowTime) > (WINDOW_ANGLE_MAX *10)){
+          rightStartWindowTime = millis();
+          rightWindow.write(WINDOW_ANGLE_MAX);
+        }
+        else {
+          rightEndWindowTime = millis();
+        }
+      }
     }
-    rightWindow.write(rightWindowAngle);
+    else {
+      Serial.print(F("\r\n === RightWindow err, return value err === \r\n"));
+    }
 
     //Heater Control On Off
     if(digitalRead(HEATER_PIN) == HIGH && heater == 0){

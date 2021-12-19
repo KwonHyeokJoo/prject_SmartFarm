@@ -25,7 +25,7 @@ public class SettingTemActivity extends AppCompatActivity {
     NumberPicker npcTarTmp;
     int CurrentTem1, CurrentTem2, targetTemp;
     public static Context context_setTem;
-    String urlsetTem;
+    String urlSetTem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,9 +86,13 @@ public class SettingTemActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 targetTemp = npcTarTmp.getValue();
-                urlsetTem = "http://192.168.0.38/setTargetTmp/" + Integer.toString(targetTemp);
-                Toast.makeText(getApplicationContext(), urlsetTem, Toast.LENGTH_SHORT);
-                request(urlsetTem);
+                urlSetTem = "http://192.168.10.108/setTargetTmp/" + Integer.toString(targetTemp);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        request(urlSetTem);
+                    }
+                }).start();
             }
         });
 
@@ -133,8 +137,8 @@ public class SettingTemActivity extends AppCompatActivity {
                     }
                     output.append(line + "\n");
                 }
-                conn.disconnect();
                 reader.close();
+                conn.disconnect();
             }
         } catch (Exception ex) {
             Log.d("test" , "목표 온도를 다시 설정해 주세요.\nError: " + ex.getMessage());

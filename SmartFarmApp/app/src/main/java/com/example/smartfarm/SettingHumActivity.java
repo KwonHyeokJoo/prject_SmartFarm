@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.NumberPicker;
@@ -21,11 +22,11 @@ public class SettingHumActivity extends AppCompatActivity {
 
     boolean ConnectionState;
     public TextView tvTargetH, tvHum;// 습도
-    Button btnReturn2, btnHumDown, btnHumUp;
+    Button btnReturn2, btnHumDown, btnHumUp, btnApply2;
     NumberPicker npcTarHum;
     int CurrentHum1, CurrentHum2, targetHum;
     public static Context context_setHum;
-
+    String urlSetHum;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +73,22 @@ public class SettingHumActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 npcTarHum.setValue(npcTarHum.getValue()-1);
+            }
+        });
+
+        // 적용버튼
+        btnApply2 = (Button) findViewById(R.id.btnApply2);
+        btnApply2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                targetHum = npcTarHum.getValue();
+                urlSetHum = "http://192.168.10.108/setTargetHum/" + Integer.toString(targetHum);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ((SettingTemActivity)SettingTemActivity.context_setTem).request(urlSetHum);
+                    }
+                }).start();
             }
         });
 

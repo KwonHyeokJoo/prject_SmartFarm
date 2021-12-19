@@ -349,9 +349,11 @@ void loop() {
         //안되면 while 사용해야됨 
         if((leftEndWindowTime - leftStartWindowTime) > (WINDOW_ANGLE_MAX *10)){
           leftStartWindowTime = millis();
-          leftWindow.write(WINDOW_ANGLE_MIN);
+          leftWindowAngle = WINDOW_ANGLE_MIN;
+          leftWindow.write(leftWindowAngle);
         }
         else {
+          Serial.print(F("\r\n\r\n === 작동 대기중 === \r\n\r\n"));
           leftEndWindowTime = millis();
         }
       }
@@ -364,9 +366,11 @@ void loop() {
       else {
         if((leftEndWindowTime - leftStartWindowTime) > (WINDOW_ANGLE_MAX *10)){
           leftStartWindowTime = millis();
-          leftWindow.write(WINDOW_ANGLE_MAX);
+          leftWindowAngle = WINDOW_ANGLE_MAX;
+          leftWindow.write(leftWindowAngle);
         }
         else {
+          Serial.print(F("\r\n\r\n === 작동 대기중 === \r\n\r\n"));
           leftEndWindowTime = millis();
         }
       }
@@ -385,9 +389,11 @@ void loop() {
         //안되면 while 사용해야됨 
         if((rightEndWindowTime - rightStartWindowTime) > (WINDOW_ANGLE_MAX *10)){
           rightStartWindowTime = millis();
-          rightWindow.write(WINDOW_ANGLE_MIN);
+          rightWindowAngle = WINDOW_ANGLE_MIN;
+          rightWindow.write(rightWindowAngle);
         }
         else {
+          Serial.print(F("\r\n\r\n === 작동 대기중 === \r\n\r\n"));
           rightEndWindowTime = millis();
         }
       }
@@ -400,9 +406,11 @@ void loop() {
       else {
         if((rightEndWindowTime - rightStartWindowTime) > (WINDOW_ANGLE_MAX *10)){
           rightStartWindowTime = millis();
-          rightWindow.write(WINDOW_ANGLE_MAX);
+          rightWindowAngle = WINDOW_ANGLE_MAX;
+          rightWindow.write(rightWindowAngle);
         }
         else {
+          Serial.print(F("\r\n\r\n === 작동 대기중 === \r\n\r\n"));
           rightEndWindowTime = millis();
         }
       }

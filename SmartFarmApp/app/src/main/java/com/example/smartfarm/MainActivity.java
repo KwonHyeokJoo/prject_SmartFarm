@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
@@ -40,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
     public static Context context_main;
     public int curTem1, curTem2, curHum1, curHum2, getCurTem1, getCurTem2, getCurHum1, getCurHum2;
 
-    String urlStr = "http://192.168.0.38/getState";
+    String urlStr = "http://192.168.10.108/getState";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -277,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
                 ConnectionState = true;
             }
         } catch (Exception ex) {
-            //Log.d("test" , "Error " + ex.getMessage());
+            Log.d("test" , "Error " + ex.getMessage());
             ConnectionState = false;
         }
         if (ConnectionState == true) {

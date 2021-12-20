@@ -19,6 +19,10 @@
 #define WINDOW_ANGLE_MAX 30         // 개폐기 최대 각도
 #define WINDOW_ANGLE_MIN 10         // 개폐기 최소 각도
 
+#define fanSpeedMax 255
+#define fanSpeedMid 128
+#define fanSpeedMin 0
+
 Servo leftWindow;
 Servo rightWindow;
 
@@ -34,16 +38,22 @@ const String port = "80";
 // 토양수분, 온도1, 온도2, 습도1, 습도2, 조도,
 // 수동자동, 팬상태, 팬스피드, 왼쪽개폐기, 오른쪽개폐기, 열풍기
 // Receive ALL Data
-const uint8_t sensingDataCount = 6;
-const uint8_t controlDataCount = 6;
+const uint8_t sensingDataCount = 7; //getTargetTmp 추가
+const uint8_t controlDataCount = 6; 
 const uint8_t allDataCount = sensingDataCount + controlDataCount;
-String receiveType[allDataCount] = {"grd","tmp1","tmp2","hum1","hum2","lux",
+String receiveType[allDataCount] = {"grd","tmp1","tmp2","hum1","hum2","lux","getTargetTmp",
                                     "getManualControl","getFanState","getFanSpeed",
                                     "getLeftWindow","getRightWindow","getHeaterState"};
-int16_t receiveValue[allDataCount] = {0,0,0,0,0,0,1,0,0,0,0,0};
+int16_t receiveValue[allDataCount] = {0,0,0,0,0,0,0,1,0,0,0,0,0};
+
 // 개폐기 초기 열림 각도 : 최대값으로 설정
 int8_t leftWindowAngle = WINDOW_ANGLE_MAX;
 int8_t rightWindowAngle = WINDOW_ANGLE_MAX;
+
+//목표 온도 //토양습도
+uint8_t targetTemp; 
+uint8_t targetMoist = 40;
+
 
 const uint64_t waitTime = 5000;
 
@@ -285,6 +295,11 @@ void loop() {
   uint8_t manualControl;
   int i,j;
   String url;
+  uint8_t fanState,fanSpeed,LeftControl,RightControl,heater;
+  uint8_t pumpState;  //자동제어시 펌프상태 저장변수
+  uint8_t grdData,tmp1Data,tmp2Data,hum1Data,hum2Data,luxData;   // 토양습도, 온도1, 온도2, 습도1, 습도2 값 저장받을 변수
+  
+  
 
   //센싱 값 입력 받기
   ///////////////////////////////////////////////////////////////////////////////
@@ -301,33 +316,53 @@ void loop() {
     }
   }
 
+  // 제어할 data 및 종료 가져오기
+  for(i=sensingDataCount; i<allDataCount; i++){
+    if(receiveType[i] == receiveType[sensingDataCount]){
+      fanState = receiveValue[i];
+    }
+    else if(receiveType[i] == receiveType[sensingDataCount+1]){
+      fanSpeed = receiveValue[i];
+    }
+    else if(receiveType[i] == receiveType[sensingDataCount+2]){
+      LeftControl = receiveValue[i];
+    }
+    else if(receiveType[i] == receiveType[sensingDataCount+3]){
+      RightControl = receiveValue[i];
+    }
+    else if(receiveType[i] == receiveType[sensingDataCount+4]){
+      heater = receiveValue[i];
+    }
+  }
+
+  // 센서값 가져오기
+  for(i=0; i<sensingDataCount; i++){
+    if(receiveType[i] == receiveType[sensingDataCount-7]){
+      grdData = receiveValue[i];
+    }
+    else if(receiveType[i] == receiveType[sensingDataCount-6]){
+      tmp1Data = receiveValue[i];
+    }
+    else if(receiveType[i] == receiveType[sensingDataCount-5]){
+      tmp2Data = receiveValue[i];
+    }
+    else if(receiveType[i] == receiveType[sensingDataCount-4]){
+      hum1Data = receiveValue[i];
+    }
+    else if(receiveType[i] == receiveType[sensingDataCount-3]){
+      hum2Data = receiveValue[i];
+    }
+    else if(receiveType[i] == receiveType[sensingDataCount-2]){
+      luxData = receiveValue[i];
+    }
+    else if(receiveType[i] == receiveType[sensingDataCount-1]){
+      targetTemp = receiveValue[i];
+    }
+  }
+
+
   //수동 제어
   if(manualControl == 0){
-    uint8_t fanState;
-    uint8_t fanSpeed;
-    uint8_t LeftControl;
-    uint8_t RightControl;
-    uint8_t heater;
-
-    // 제어할 data 및 종료 가져오기
-    for(i=sensingDataCount; i<allDataCount; i++){
-      if(receiveType[i] == receiveType[sensingDataCount+1]){
-        fanState = receiveValue[i];
-      }
-      else if(receiveType[i] == receiveType[sensingDataCount+2]){
-        fanSpeed = receiveValue[i];
-      }
-      else if(receiveType[i] == receiveType[sensingDataCount+3]){
-        LeftControl = receiveValue[i];
-      }
-      else if(receiveType[i] == receiveType[sensingDataCount+4]){
-        RightControl = receiveValue[i];
-      }
-      else if(receiveType[i] == receiveType[sensingDataCount+5]){
-        heater = receiveValue[i];
-      }
-    }
-
     //Fan Control
     // 현재 fan이 가동중인데, 앱에서 정지(0)하라는 명령이 들어오면 정지
     if(digitalRead(FANCONTROL_IN_1) == HIGH && fanState == 0){
@@ -428,7 +463,58 @@ void loop() {
     }
   }
   //자동 제어
-  else if(manualControl == 1){
+  else if(manualControl == 1){ 
+    uint8_t tempAvg;
+    tempAvg = (tmp1Data + tmp2Data)/2;
     
+    //Fan Control(Auto)
+    //온도 앞 뒤 차이가 5도 이상이면 팬을 가동하여 공기 순환
+    if(abs(tmp1Data - tmp2Data) >= 5) {
+      fanState = 1;
+      analogWrite(FANCONTROL_SPEED,fanSpeedMax);
+      moterControl(fanState, FANCONTROL_IN_1, FANCONTROL_IN_2);
+    } 
+    else if (abs(tmp1Data - tmp2Data) >= 3) {
+      fanState = 1;
+      analogWrite(FANCONTROL_SPEED,fanSpeedMid);
+      moterControl(fanState, FANCONTROL_IN_1, FANCONTROL_IN_2);  
+    }
+    else {
+      fanState = 0;
+      moterControl(fanState, FANCONTROL_IN_1, FANCONTROL_IN_2);
+    }
+
+    //히터(Auto)
+    //목표온도가 현재온도와 3도이상 차이날 경우 히터 On 
+    if(targetTemp - tempAvg >= 3) {
+      heater = 1;
+      relayControl(HEATER_PIN, heater);
+    } 
+    else {
+      heater = 0;
+      relayControl(HEATER_PIN, heater);
+    }
+    
+    //개폐기(Auto)
+    //목표온도가 현재온도와 3도이상 차이날 경우 개폐기 On 
+    if(tempAvg - targetTemp >= 3) {
+      leftWindowAngle = WINDOW_ANGLE_MAX;
+      rightWindowAngle = WINDOW_ANGLE_MAX;
+    } 
+    else {
+      leftWindowAngle = WINDOW_ANGLE_MIN;
+      rightWindowAngle = WINDOW_ANGLE_MIN;
+    }
   }
+  
+  //토양습도센서(Auto)
+  //목표습도보다 낮은 경우 워터펌프 가동
+  if(grdData <= targetMoist) {
+    pumpState = 1;
+    relayControl(PUMP_PIN, pumpState); 
+  } 
+  else {
+    pumpState = 0;
+    relayControl(PUMP_PIN, pumpState); 
+  }  
 }

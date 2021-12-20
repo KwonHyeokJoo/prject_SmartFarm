@@ -90,7 +90,7 @@ public class SettingTemActivity extends AppCompatActivity {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        request(urlSetTem);
+                        ((MainActivity)MainActivity.context_main).request(urlSetTem);
                     }
                 }).start();
             }
@@ -113,35 +113,5 @@ public class SettingTemActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         ((MainActivity)MainActivity.context_main).stTemOn = false;
-    }
-
-    public void request(String urlStr) {
-        StringBuilder output = new StringBuilder();
-        try {
-            URL url = new URL(urlStr);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            if (conn != null) {
-                conn.setConnectTimeout(10000);
-                conn.setRequestMethod("GET");
-                conn.setDoInput(true);
-
-                int resCode = conn.getResponseCode();
-
-                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                String line = null;
-
-                while (true) {
-                    line = reader.readLine();
-                    if (line == null) {
-                        break;
-                    }
-                    output.append(line + "\n");
-                }
-                reader.close();
-                conn.disconnect();
-            }
-        } catch (Exception ex) {
-            Log.d("test" , "목표 온도를 다시 설정해 주세요.\nError: " + ex.getMessage());
-        }
     }
 }

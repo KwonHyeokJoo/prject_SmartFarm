@@ -23,6 +23,7 @@
         <activity   android:name=".SettingHumActivity" android:label="습도 설정" android:exported="true"/>
         <activity   android:name=".SettingFanActivity" android:label="팬 설정" android:exported="true"/>
         <activity   android:name=".SettingHeatActivity" android:label="열풍기 설정"  android:exported="true"/>
+        <activity   android:name=".SettingWindowActivity" android:label="개폐기 설정" android:exported="true"/>
     </application>
 
 </manifest>

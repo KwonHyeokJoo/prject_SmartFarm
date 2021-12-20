@@ -25,8 +25,8 @@ DHT dht(DHTPIN, DHTTYPE);
 DHT dht2(DHTPIN2, DHTTYPE);
 
 //와이파이 ID 및 Password 설정
-const String ssid = "Pi3-AP";
-const String password = "raspberry";
+const String ssid = "PI_AP";
+const String password = "12345678";
 
 //서버 IP 설정 및 Port 설정
 const String ip = "192.168.1.1";

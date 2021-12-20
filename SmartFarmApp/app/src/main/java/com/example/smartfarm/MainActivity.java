@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -28,7 +29,7 @@ import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
     EditText editText;
-    TextView textView, btnTmp, btnHum, btnGrd, btnHeat, btnLeftDoor, btnRightDoor;
+    TextView textView, btnTmp, btnHum, btnFan, btnHeat, btnLeftDoor, btnRightDoor;
     ImageView imageView;
     Button button;
     Switch control;
@@ -39,9 +40,11 @@ public class MainActivity extends AppCompatActivity {
     int targetTem, targetHum;
     boolean ConnectionState;
     public static Context context_main;
-    public int curTem1, curTem2, curHum1, curHum2, getCurTem1, getCurTem2, getCurHum1, getCurHum2;
+    public int curTem1, curTem2, curHum1, curHum2, leftWindow, rightWindow, fanState, heaterState,
+            getCurTem1, getCurTem2, getCurHum1, getCurHum2, getLw, getRw, getFs, getHs;
 
-    String urlStr = "http://192.168.10.108/getState";
+    String urlCtrl = "http://192.168.10.108/setControl/";
+    String urlTrd = "http://192.168.10.108/getState";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,8 +105,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // 팬
-        TextView btnGrd = findViewById(R.id.btnGrd);
-        btnGrd.setOnClickListener(new View.OnClickListener() {
+        TextView btnFan = findViewById(R.id.btnFan);
+        btnFan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                /* final String urlStr = "http://192.168.1.1/grd/30"; //editText.getText().toString();
@@ -142,7 +145,6 @@ public class MainActivity extends AppCompatActivity {
         btnLeftDoor.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 /*final String urlStr = "http://192.168.1.1/btnLeftDoor"; //editText.getText().toString();
 
                 new Thread(new Runnable() {
@@ -151,6 +153,8 @@ public class MainActivity extends AppCompatActivity {
                         request(urlStr);
                     }
                 }).start();*/
+                Intent intent = new Intent(getApplicationContext(), SettingWindowActivity.class);
+                startActivity(intent);
             }
         });
 
@@ -159,11 +163,13 @@ public class MainActivity extends AppCompatActivity {
         btnRightDoor.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Intent intent = new Intent(getApplicationContext(), SettingWindowActivity.class);
+                startActivity(intent);
             }
         });
 
         btnHum.setClickable(false);
-        btnGrd.setClickable(false);
+        btnFan.setClickable(false);
         btnHeat.setClickable(false);
         btnLeftDoor.setClickable(false);
         btnRightDoor.setClickable(false);
@@ -175,18 +181,21 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 if (control.isChecked()==true) {
-                    btnTmp.setClickable(true);
                     btnHum.setClickable(true);
-                    btnGrd.setClickable(true);
+                    btnFan.setClickable(true);
                     btnHeat.setClickable(true);
                     btnLeftDoor.setClickable(true);
                     btnRightDoor.setClickable(true);
+                    urlCtrl += "1";
+                    request(urlCtrl);
                 } else {
                     btnHum.setClickable(false);
-                    btnGrd.setClickable(false);
+                    btnFan.setClickable(false);
                     btnHeat.setClickable(false);
                     btnLeftDoor.setClickable(false);
                     btnRightDoor.setClickable(false);
+                    urlCtrl += "0";
+                    request(urlCtrl);
                 }
 
             }
@@ -198,34 +207,134 @@ public class MainActivity extends AppCompatActivity {
                 while(true) {
                     try {
                         SystemClock.sleep(1000);
-                        getState(urlStr);
-                        //서버로부터 받아온 값이 기존값과 다를 경우 세팅
+                        getState(urlTrd);
+                        //서버로부터 받아온 값이 기존값과 다를 경우 세팅 : 온도
                         if(curTem1 != getCurTem1 || curTem2 != getCurTem2){
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
                                     btnTmp.setText("현재 온도\n센서1 : " + curTem1 + "\n센서2 : " + curTem2 + "\n목표 온도 : " + targetTem);
                                     if(stTemOn == true){
-                                        ((SettingTemActivity)SettingTemActivity.context_setTem).tvTem.setText("센서1 : "+ Integer.toString(curTem1) + "도\n센서2 : " + Integer.toString(curTem2) + "도\n");
+                                        ((SettingTemActivity)SettingTemActivity.context_setTem).tvTem.
+                                                setText("센서1 : "+ Integer.toString(curTem1) + "도\n센서2 : " + Integer.toString(curTem2) + "도\n");
                                     };
                                 }
                             });
                             getCurTem1 = curTem1;
                             getCurTem2 = curTem2;
                         }
-                        //서버로부터 받아온 값이 기존값과 다를 경우 세팅
+
+                        //서버로부터 받아온 값이 기존값과 다를 경우 세팅 : 습도
                         if(curHum1 != getCurHum1 || curHum2 != getCurHum2){
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
                                     btnHum.setText("현재 습도\n센서1 : " + curHum1 + "\n센서2 : " + curHum2 + "\n목표 습도 : " + targetHum);
                                     if(stHumOn == true){
-                                        ((SettingHumActivity)SettingHumActivity.context_setHum).tvHum.setText("센서1 : "+ Integer.toString(curHum1) + "도\n센서2 : " + Integer.toString(curHum2) + "도\n");
+                                        ((SettingHumActivity)SettingHumActivity.context_setHum).tvHum.
+                                                setText("센서1 : "+ Integer.toString(curHum1) + "도\n센서2 : " + Integer.toString(curHum2) + "도\n");
                                     };
                                 }
                             });
                             getCurHum1 = curHum1;
                             getCurHum2 = curHum2;
+                        }
+
+                        //서버로부터 받아온 값이 기존값과 다를 경우 세팅 : 좌측개폐기
+                        if(getLw != leftWindow){
+                            switch (leftWindow){
+                                case 0 :
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            btnLeftDoor.setText("좌측개폐기\n닫힘");
+                                            btnLeftDoor.setBackgroundColor(Color.RED);
+                                        }
+                                    });
+
+                                case 1 :
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            btnLeftDoor.setText("좌측개폐기\n열림");
+                                            btnLeftDoor.setBackgroundColor(Color.BLUE);
+                                        }
+                                    });
+                            }
+                            getLw = leftWindow;
+                        }
+
+                        //서버로부터 받아온 값이 기존값과 다를 경우 세팅 : 우측개폐기
+                        if(getRw != rightWindow){
+                            switch (rightWindow){
+                                case 0 :
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            btnRightDoor.setText("우측개폐기\n닫힘");
+                                            btnRightDoor.setBackgroundColor(Color.RED);
+                                        }
+                                    });
+
+                                case 1 :
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            btnRightDoor.setText("우측개폐기\n열림");
+                                            btnRightDoor.setBackgroundColor(Color.BLUE);
+                                        }
+                                    });
+                            }
+                            getRw = rightWindow;
+                        }
+
+                        //서버로부터 받아온 값이 기존값과 다를 경우 세팅 : 팬
+                        if(getFs != fanState){
+                            switch (fanState){
+                                case 0:
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            btnFan.setText("팬\n정지");
+                                            btnFan.setBackgroundColor(Color.RED);
+                                        }
+                                    });
+                                    break;
+                                case 1:
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            btnFan.setText("팬\n가동");
+                                            btnFan.setBackgroundColor(Color.BLUE);
+                                        }
+                                    });
+                                    break;
+                            }
+                            getFs = fanState;
+                        }
+                        //서버로부터 받아온 값이 기존값과 다를 경우 세팅 : 열풍기
+                        if(getHs != heaterState){
+                            switch(heaterState){
+                                case 0 :
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            btnHeat.setText("열풍기\n정지");
+                                            btnHeat.setBackgroundColor(Color.RED);
+                                        }
+                                    });
+                                    break;
+                                case 1:
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            btnHeat.setText("열풍기\n가동");
+                                            btnHeat.setBackgroundColor(Color.BLUE);
+                                        }
+                                    });
+                                    break;
+                            }
+                            getHs = heaterState;
                         }
                         Thread.interrupted();
                     } catch (Exception e) {
@@ -289,6 +398,40 @@ public class MainActivity extends AppCompatActivity {
             curTem2 = Integer.parseInt(stateArray[1]);
             curHum1 = Integer.parseInt(stateArray[2]);
             curHum2 = Integer.parseInt(stateArray[3]);
+            leftWindow  = Integer.parseInt(stateArray[4]);
+            rightWindow  = Integer.parseInt(stateArray[5]);
+            fanState  = Integer.parseInt(stateArray[6]);
+            heaterState  = Integer.parseInt(stateArray[7]);
+        }
+    }
+
+    public void request(String urlStr) {
+        StringBuilder output = new StringBuilder();
+        try {
+            URL url = new URL(urlStr);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            if (conn != null) {
+                conn.setConnectTimeout(10000);
+                conn.setRequestMethod("GET");
+                conn.setDoInput(true);
+
+                int resCode = conn.getResponseCode();
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                String line = null;
+
+                while (true) {
+                    line = reader.readLine();
+                    if (line == null) {
+                        break;
+                    }
+                    output.append(line + "\n");
+                }
+                reader.close();
+                conn.disconnect();
+            }
+        } catch (Exception ex) {
+            Log.d("test" , "목표 온도를 다시 설정해 주세요.\nError: " + ex.getMessage());
         }
     }
 }

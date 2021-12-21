@@ -9,6 +9,14 @@ lux = 0
 tmpTarget = 30 #목표온도기준값
 humTarget = 40 #목표습도기준값
 manualControl = 0 #수동/자동제어
+########################################
+#수동용변수
+fanstateCtrl = 0 #팬 온/오프
+heatStateCtrl = 0 #히터 온/오프
+leftWindowCtrl = 0 #왼쪽개폐기 온/오프
+RightWindowCtrl = 0 #오른쪽개폐기 온/오프
+#######################################
+#자동용변수
 fanState = 0 #팬 온/오프
 fanSpeed = 0 #팬속도제어
 leftWindow = 0 #왼쪽개폐기 온/오프
@@ -20,7 +28,7 @@ app = Flask(__name__)
 
 @app.route('/getState')
 def get_state():
-	return '%s/%s/%s/%s/\r\n' % (tmp1, tmp2, hum1, hum2)
+	return '%s/%s/%s/%s/%s/%s/%s/%s\r\n' % (tmp1, tmp2, hum1, hum2,leftWindow, rightWindow, fanState, heaterState)
 
 @app.route('/setTargetTmp/<tmp>')
 def setTargetTmp(tmp):
@@ -34,6 +42,7 @@ def getTargetTmp():
 
 @app.route('/setTargetHum/<hum>')
 def setTargetHum(hum):
+	global humTarget
 	humTarget = hum
 	return 'Ok'
 
@@ -99,6 +108,50 @@ def setManualControl(OnOff):
 def getManualControl():
 	return '@%s' %  manualControl
 
+#####################################
+#수동용 온오프 여부 표시 변수 추가
+#팬 온/오프
+@app.route('/setFanC/<OnOff>')
+def setFanC(OnOff):
+	fanStateCtrl = OnOff
+	return 'Ok'
+
+@app.route('/getFanC')
+def getFanC():
+	return '@%s' % fanStateCtrl
+
+#히터 온/오프
+@app.route('/setHeatC/<OnOff>')
+def setHeatC(OnOff):
+	heatStateCtrl = OnOff
+	return 'Ok'
+
+@app.route('/getHeatC/<OnOff>')
+def getHeatC():
+	return '@%s' % heatStateCtrl
+
+#왼쪽개폐기 온/오프
+@app.route('/setLeftWindowC/<OnOff>')
+def setLeftWindowC(OnOff):
+	leftWindowCtrl = OnOff
+	return 'Ok'
+
+@app.route('/getLeftWindowC')
+def getLeftWindowC():
+	return '@%s' % leftWindowCtrl
+
+#오른쪽개폐기 온/오프
+@app.route('/setRightWindowC/<OnOff>')
+def setRightWindowC(OnOff):
+	rightWindowCtrl = OnOff
+	return 'Ok'
+
+@app.route('/getRightWindowC/<OnOff>')
+def getRightWindowC():
+	return '@%s' % rightWindowCtrl 
+
+###################################3
+#자동용
 #팬 온/오프
 @app.route('/setFanOnOff/<OnOff>')
 def setFanOnOff(OnOff):

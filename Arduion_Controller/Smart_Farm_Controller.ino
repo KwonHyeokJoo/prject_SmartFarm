@@ -19,9 +19,13 @@
 #define WINDOW_ANGLE_MAX 30         // 개폐기 최대 각도
 #define WINDOW_ANGLE_MIN 10         // 개폐기 최소 각도
 
-#define FAN_SPEED_MAX 255
-#define FAN_SPEED_MID 128
-#define FAN_SPEED_MIN 0
+#define FAN_SPEED_MAX 255           // FAN의 최대속도
+#define FAN_SPEED_MID 128           // FAN의 중간속도
+#define FAN_SPEED_MIN 80            // FAN의 최소속도
+#define FAN_SPEED_ZERO 0
+
+#define ON 1
+#define OFF 0
 
 Servo leftWindow;
 Servo rightWindow;
@@ -58,7 +62,6 @@ int8_t rightWindowAngle = WINDOW_ANGLE_MAX;
 //목표 온도 //토양습도
 uint8_t targetTemp; 
 uint8_t targetMoist = 40;
-const uint64_t waitTime = 5000;
 
 //개폐기 시간 측정
 uint64_t leftStartWindowTime = millis();
@@ -551,42 +554,55 @@ void loop() {
     
     //Fan Control(Auto)
     //온도 앞 뒤 차이가 5도 이상이면 팬을 가동하여 공기 순환
-    if(abs(tmp1Data - tmp2Data) >= 5) {
-      fanState = 1;
-      analogWrite(FANCONTROL_SPEED,FAN_SPEED_MAX);
+    if(tmp1Data > tmp2Data){
+      if((tmp1Data - tmp2Data) > 5){
+        fanState = ON;
+        fanSpeed = FAN_SPEED_MAX;
+      }
+      else if((tmp1Data - tmp2Data) > 3){
+        fanState = ON;
+        fanSpeed = FAN_SPEED_MID;
+      }
+      else if((tmp1Data - tmp2Data) > 1) {
+        fanState = ON;
+        fanSpeed = FAN_SPEED_MIN;
+      }
+      else {
+        fanState = OFF;
+        fanSpeed = FAN_SPEED_ZERO;
+      }
       moterControl(fanState, FANCONTROL_IN_1, FANCONTROL_IN_2);
-    } 
-    else if (abs(tmp1Data - tmp2Data) >= 3) {
-      fanState = 1;
-      analogWrite(FANCONTROL_SPEED,FAN_SPEED_MID);
-      moterControl(fanState, FANCONTROL_IN_1, FANCONTROL_IN_2);  
-    }
-    else {
-      fanState = 0;
-      moterControl(fanState, FANCONTROL_IN_1, FANCONTROL_IN_2);
+      analogWrite(FANCONTROL_SPEED,fanSpeed);
     }
 
     //히터(Auto)
     //목표온도가 현재온도와 3도이상 차이날 경우 히터 On 
-    if(targetTemp - tempAvg >= 3) {
-      heater = 1;
-      relayControl(HEATER_PIN, heater);
-    } 
-    else {
-      heater = 0;
+    if(targetTemp < tempAvg){
+      // 설정온도가 평균온도보다 높다면
+      if(targetTemp - tempAvg > 3) {
+        heater = ON;
+      }
+      else {
+        heater = OFF;
+      }
       relayControl(HEATER_PIN, heater);
     }
     
     //개폐기(Auto)
     //목표온도가 현재온도와 3도이상 차이날 경우 개폐기 On 
-    if(tempAvg - targetTemp >= 3) {
-      leftWindowAngle = WINDOW_ANGLE_MAX;
-      rightWindowAngle = WINDOW_ANGLE_MAX;
+    if(tempAvg < targetTemp){
+      if((tempAvg - targetTemp) > 3){
+        //타겟온도보다 평균온도가 3도보다 높으면 열어줌
+        leftWindowAngle = WINDOW_ANGLE_MAX;
+        rightWindowAngle = WINDOW_ANGLE_MAX;
+      }
+      else {
+        leftWindowAngle = WINDOW_ANGLE_MIN;
+        rightWindowAngle = WINDOW_ANGLE_MIN;
+      }
+      leftWindow.write(leftWindowAngle);
+      rightWindow.write(rightWindowAngle);
     } 
-    else {
-      leftWindowAngle = WINDOW_ANGLE_MIN;
-      rightWindowAngle = WINDOW_ANGLE_MIN;
-    }
   }
   
   //토양습도센서(Auto)

@@ -361,56 +361,11 @@ void loop() {
       Serial.print(F("\r\n\r\n === err === \r\n\r\n"));
     }
   }
-
-  // 제어할 data 및 종료 가져오기
-  for(i=sensingDataCount; i<allDataCount; i++){
-    if(receiveType[i] == receiveType[sensingDataCount]){
-      fanState = receiveValue[i];
-    }
-    else if(receiveType[i] == receiveType[sensingDataCount+1]){
-      fanSpeed = receiveValue[i];
-    }
-    else if(receiveType[i] == receiveType[sensingDataCount+2]){
-      LeftControl = receiveValue[i];
-    }
-    else if(receiveType[i] == receiveType[sensingDataCount+3]){
-      RightControl = receiveValue[i];
-    }
-    else if(receiveType[i] == receiveType[sensingDataCount+4]){
-      heater = receiveValue[i];
-    }
-  }
-
-  // 센서값 가져오기
-  for(i=0; i<sensingDataCount; i++){
-    if(receiveType[i] == receiveType[sensingDataCount-7]){
-      grdData = receiveValue[i];
-    }
-    else if(receiveType[i] == receiveType[sensingDataCount-6]){
-      tmp1Data = receiveValue[i];
-    }
-    else if(receiveType[i] == receiveType[sensingDataCount-5]){
-      tmp2Data = receiveValue[i];
-    }
-    else if(receiveType[i] == receiveType[sensingDataCount-4]){
-      hum1Data = receiveValue[i];
-    }
-    else if(receiveType[i] == receiveType[sensingDataCount-3]){
-      hum2Data = receiveValue[i];
-    }
-    else if(receiveType[i] == receiveType[sensingDataCount-2]){
-      luxData = receiveValue[i];
-    }
-    else if(receiveType[i] == receiveType[sensingDataCount-1]){
-      targetTemp = receiveValue[i];
-    }
-  }
-
-
+  
   //수동 제어
   if(manualControl == 0){
     //Fan Control
-    if(fanState == 0){
+    if(fanState == OFF){
       //fan 정지
       if(digitalRead(FANCONTROL_IN_1) == LOW){
         //현재 fan 정지 상태
@@ -421,7 +376,7 @@ void loop() {
         moterControl(fanState, FANCONTROL_IN_1, FANCONTROL_IN_2);
       }
     }
-    else if(fanState == 1){
+    else if(fanState == ON){
       //fan 가동
       if(digitalRead(FANCONTROL_IN_1) == HIGH){
         //가동중 속도 조절
@@ -460,7 +415,7 @@ void loop() {
     }
 
     // Left Window 개폐
-    if(LeftControl == 0){
+    if(LeftControl == OFF){
       //close window control
       if(leftWindowAngle == WINDOW_ANGLE_MIN){
         Serial.print(F("\r\n\r\n === 이미 닫혀 있음 === \r\n\r\n"));
@@ -478,7 +433,7 @@ void loop() {
         }
       }
     }
-    else if(LeftControl == 1){
+    else if(LeftControl == ON){
       //open window control
       if(leftWindowAngle == WINDOW_ANGLE_MAX){
         Serial.print(F("\r\n\r\n === 이미 열려 있음 === \r\n\r\n"));
@@ -500,7 +455,7 @@ void loop() {
     }
     
     //Right Window 개폐
-    if(RightControl == 0){
+    if(RightControl == OFF){
       //close window control
       if(rightWindowAngle == WINDOW_ANGLE_MIN){
         Serial.print(F("\r\n\r\n === 이미 닫혀 있음 === \r\n\r\n"));
@@ -518,7 +473,7 @@ void loop() {
         }
       }
     }
-    else if(RightControl == 1){
+    else if(RightControl == ON){
       //open window control
       if(rightWindowAngle == WINDOW_ANGLE_MAX){
         Serial.print(F("\r\n\r\n === 이미 열려 있음 === \r\n\r\n"));
@@ -540,10 +495,10 @@ void loop() {
     }
 
     //Heater Control On Off
-    if(digitalRead(HEATER_PIN) == HIGH && heater == 0){
+    if(digitalRead(HEATER_PIN) == HIGH && heater == OFF){
       relayControl(HEATER_PIN, heater);
     }
-    else if(digitalRead(HEATER_PIN) == LOW && heater == 1){
+    else if(digitalRead(HEATER_PIN) == LOW && heater == ON){
       relayControl(HEATER_PIN, heater);
     }
   }

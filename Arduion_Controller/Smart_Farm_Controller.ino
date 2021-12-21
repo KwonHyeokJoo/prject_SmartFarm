@@ -19,15 +19,9 @@
 #define WINDOW_ANGLE_MAX 30         // 개폐기 최대 각도
 #define WINDOW_ANGLE_MIN 10         // 개폐기 최소 각도
 
-<<<<<<< HEAD
 #define FAN_SPEED_MAX 255
 #define FAN_SPEED_MID 128
 #define FAN_SPEED_MIN 0
-=======
-#define fanSpeedMax 255
-#define fanSpeedMid 128
-#define fanSpeedMin 0
->>>>>>> a43276f7225ed5c6679471cde8dac03829ce14b9
 
 Servo leftWindow;
 Servo rightWindow;
@@ -52,14 +46,11 @@ String receiveType[allDataCount] = {"grd","tmp1","tmp2","hum1","hum2","lux","get
                                     "getLeftWindow","getRightWindow","getHeaterState"};
 int16_t receiveValue[allDataCount] = {0,0,0,0,0,0,0,1,0,0,0,0,0};
 
-<<<<<<< HEAD
 //fan 시작 시간 측정
 uint64_t startFanSpeedControl;
 uint64_t endFanSpeedControl;
 const uint16_t waitFanSpeedControl = 3000;
 
-=======
->>>>>>> a43276f7225ed5c6679471cde8dac03829ce14b9
 // 개폐기 초기 열림 각도 : 최대값으로 설정
 int8_t leftWindowAngle = WINDOW_ANGLE_MAX;
 int8_t rightWindowAngle = WINDOW_ANGLE_MAX;
@@ -67,12 +58,7 @@ int8_t rightWindowAngle = WINDOW_ANGLE_MAX;
 //목표 온도 //토양습도
 uint8_t targetTemp; 
 uint8_t targetMoist = 40;
-<<<<<<< HEAD
-=======
-
-
 const uint64_t waitTime = 5000;
->>>>>>> a43276f7225ed5c6679471cde8dac03829ce14b9
 
 //개폐기 시간 측정
 uint64_t leftStartWindowTime = millis();
@@ -318,14 +304,6 @@ void loop() {
   uint8_t grdData,tmp1Data,tmp2Data,hum1Data,hum2Data,luxData;
   int i,j;
   String url;
-<<<<<<< HEAD
-=======
-  uint8_t fanState,fanSpeed,LeftControl,RightControl,heater;
-  uint8_t pumpState;  //자동제어시 펌프상태 저장변수
-  uint8_t grdData,tmp1Data,tmp2Data,hum1Data,hum2Data,luxData;   // 토양습도, 온도1, 온도2, 습도1, 습도2 값 저장받을 변수
->>>>>>> a43276f7225ed5c6679471cde8dac03829ce14b9
-  
-  
 
   //센싱 값 입력 받기
   ///////////////////////////////////////////////////////////////////////////////
@@ -575,20 +553,12 @@ void loop() {
     //온도 앞 뒤 차이가 5도 이상이면 팬을 가동하여 공기 순환
     if(abs(tmp1Data - tmp2Data) >= 5) {
       fanState = 1;
-<<<<<<< HEAD
       analogWrite(FANCONTROL_SPEED,FAN_SPEED_MAX);
-=======
-      analogWrite(FANCONTROL_SPEED,fanSpeedMax);
->>>>>>> a43276f7225ed5c6679471cde8dac03829ce14b9
       moterControl(fanState, FANCONTROL_IN_1, FANCONTROL_IN_2);
     } 
     else if (abs(tmp1Data - tmp2Data) >= 3) {
       fanState = 1;
-<<<<<<< HEAD
       analogWrite(FANCONTROL_SPEED,FAN_SPEED_MID);
-=======
-      analogWrite(FANCONTROL_SPEED,fanSpeedMid);
->>>>>>> a43276f7225ed5c6679471cde8dac03829ce14b9
       moterControl(fanState, FANCONTROL_IN_1, FANCONTROL_IN_2);  
     }
     else {

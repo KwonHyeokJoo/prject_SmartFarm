@@ -27,6 +27,11 @@
 #define ON 1
 #define OFF 0
 
+#define PUMP_TIME 10000             // 펌프 가동시간
+#define PUMP_LED1_TIME 2000         // led1 가동시간
+#define PUMP_LED2_TIME 1000         // led2 가동시간
+#define PUMP_LED3_TIME 3000         // led3 가동시간
+
 Servo leftWindow;
 Servo rightWindow;
 
@@ -59,15 +64,26 @@ const uint16_t waitFanSpeedControl = 3000;
 int8_t leftWindowAngle = WINDOW_ANGLE_MAX;
 int8_t rightWindowAngle = WINDOW_ANGLE_MAX;
 
-//목표 온도 //토양습도
+//목표 온도, 습도, 조도
 uint8_t targetTemp; 
 uint8_t targetMoist = 40;
+uint8_t targetLux = 400; 
 
 //개폐기 시간 측정
 uint64_t leftStartWindowTime = millis();
 uint64_t leftEndWindowTime = millis();
 uint64_t rightStartWindowTime = millis();
 uint64_t rightEndWindowTime = millis();
+
+//히터 시간 측정
+uint64_t  startHeaterControl = millis();
+uint64_t  endHeaterControl = millis();
+const uint16_t waitHeaterControl = 1000;
+
+//펌프 시간 측정
+uint64_t currentMillis = millis();
+uint64_t previousMillis = 0; 
+const uint16_t interval = 5000;
 
 //wifi connection
 void connectWifi() {
@@ -303,6 +319,8 @@ void loop() {
   uint8_t fanState,fanSpeed,LeftControl,RightControl,heater;
   //자동제어시 펌프상태 저장변수
   uint8_t pumpState;
+  // 생장LED 상태 저장변수
+  uint8_t ledState;
   // 토양습도, 온도1, 온도2, 습도1, 습도2 값 저장받을 변수
   uint8_t grdData,tmp1Data,tmp2Data,hum1Data,hum2Data,luxData;
   int i,j;
@@ -495,12 +513,49 @@ void loop() {
     }
 
     //Heater Control On Off
+    if(heater == OFF) {
+      if(digitalRead(HEATER_PIN == LOW)){
+        Serial.print(F("\r\n\r\n === 작동 중지상태 === \r\n\r\n"));
+      }
+      else { 
+        //가동중이라면
+        if((endHeaterControl - startHeaterControl) > waitHeaterControl){
+          startHeaterControl = millis();
+          heater = OFF;
+          relayControl(HEATER_PIN,heater);  
+        } 
+        else {
+          Serial.print(F("\r\n\r\n === 작동 중지 대기중=== \r\n\r\n"));
+          endHeaterControl = millis();
+        }
+      }
+    } else if(heater == ON) {
+        if(digitalRead(HEATER_PIN == HIGH)) {
+          Serial.print(F("\r\n\r\n === 작동 상태 === \r\n\r\n"));
+        }
+        else {
+          //작동중지상태라면
+          if((endHeaterControl - startHeaterControl) > waitHeaterControl){
+            startHeaterControl = millis();
+            heater = OFF;
+            relayControl(HEATER_PIN,heater);
+          } 
+          else {
+            Serial.print(F("\r\n\r\n === 작동 대기중 === \r\n\r\n"));
+            endHeaterControl = millis();
+          }
+        } 
+    } else {
+        Serial.print(F("\r\n === Heater err, return value err === \r\n"));
+    }
+    /*
     if(digitalRead(HEATER_PIN) == HIGH && heater == OFF){
       relayControl(HEATER_PIN, heater);
     }
     else if(digitalRead(HEATER_PIN) == LOW && heater == ON){
       relayControl(HEATER_PIN, heater);
     }
+    */
   }
   //자동 제어
   else if(manualControl == 1){ 
@@ -560,14 +615,25 @@ void loop() {
     } 
   }
   
-  //토양습도센서(Auto)
+  //토양습도센서
   //목표습도보다 낮은 경우 워터펌프 가동
   if(grdData <= targetMoist) {
-    pumpState = 1;
-    relayControl(PUMP_PIN, pumpState); 
+    pumpState = ON;
+    currentMillis = millis();
   } 
   else {
-    pumpState = 0;
+    pumpState = OFF;
     relayControl(PUMP_PIN, pumpState); 
-  }  
+  }
+  //워터펌프
+  //워터펌프 펌프가동시 워터펌프는 항시작동(10초) led1(2초/5초), led2(1초/5초), led3(3초/5초) 작동
+  //PUMP_LED1_TIME 2000, PUMP_LED2_TIME 1000, PUMP_LED3_TIME 3000   
+  
+  //조도센서
+  //목표 조도보다 낮은 경우 생장LED센서 작동
+  if(luxData < targetLux) {
+    relayControl(PUMP_PIN, ON);
+  } else {
+    relayControl(PUMP_PIN, OFF);
+  }
 }

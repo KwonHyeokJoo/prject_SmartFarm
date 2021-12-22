@@ -16,8 +16,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class SettingFanActivity extends AppCompatActivity {
 
-    String urlSetFan = "http://192.168.10.108/setFanC/";
-    String urlSetFanSpeed = "http://192.168.10.108/setFanSpeedC/";
+    String urlSetFan = "http://192.168.0.38/setFanC/";
+    String urlSetFanSpeed = "http://192.168.0.38/setFanSpeed/";
     int fanSpeed;
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -35,22 +35,34 @@ public class SettingFanActivity extends AppCompatActivity {
 
         SBfanSpeed.setEnabled(false);
 
+        //팬 On/Off 여부 스위치
         Switch fanSwitch = findViewById(R.id.fanSwitch);
         fanSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 if (fanSwitch.isChecked()==true) {
                     SBfanSpeed.setEnabled(true);
-                    urlSetFan =  "http://192.168.10.108/setFanC/1";
-                    ((MainActivity)MainActivity.context_main).request(urlSetFan);
+                    String urlSetFan1 =  urlSetFan + "1";
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            ((MainActivity)MainActivity.context_main).request(urlSetFan1);
+                        }
+                    }).start();
                 } else {
                     SBfanSpeed.setEnabled(false);
-                    urlSetFan =  "http://192.168.10.108/setFanC/0";
-                    ((MainActivity)MainActivity.context_main).request(urlSetFan);
+                    String urlSetFan0 =   urlSetFan + "0";
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            ((MainActivity)MainActivity.context_main).request(urlSetFan0);
+                        }
+                    }).start();
                 }
             }
         });
 
+        //팬 속도 조절용 SeekBar
         SBfanSpeed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
@@ -64,11 +76,17 @@ public class SettingFanActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                urlSetFanSpeed = "http://192.168.10.108/setFanSpeedC/" + Integer.toString(fanSpeed);
-                ((MainActivity)MainActivity.context_main).request(urlSetFanSpeed);
+                String urlSetFanSpeedN = urlSetFanSpeed + Integer.toString(fanSpeed);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ((MainActivity)MainActivity.context_main).request(urlSetFanSpeedN);
+                    }
+                }).start();
             }
         });
 
+        //종료
         btnReturn3 = (Button) findViewById(R.id.btnReturn3);
         btnReturn3.setOnClickListener(new View.OnClickListener() {
             @Override

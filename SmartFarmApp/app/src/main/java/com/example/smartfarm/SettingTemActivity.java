@@ -20,12 +20,12 @@ import java.net.URL;
 
 public class SettingTemActivity extends AppCompatActivity {
     boolean ConnectionState;
-    public TextView tvTargetT, tvTem;// 온도
-    Button btnReturn1, btnTmpDown, btnTmpUp, btnApply1;
-    NumberPicker npcTarTmp;
-    int CurrentTem1, CurrentTem2, targetTemp;
+    public TextView tvTargetT, tvTem; // 온도 표시용 TextView
+    Button btnReturn1, btnTmpDown, btnTmpUp, btnApply1; // 목표온도 조절용 Button
+    NumberPicker npcTarTmp; // 목표온도 조절용 NumberPicker
+    int CurrentTem1, CurrentTem2, targetTemp; // 현재 온도 1,2, 목표 온도
     public static Context context_setTem;
-    String urlSetTem;
+    String urlSetTem; // 목표 온도 전달용 url
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,13 +86,19 @@ public class SettingTemActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 targetTemp = npcTarTmp.getValue();
-                urlSetTem = "http://192.168.10.108/setTargetTmp/" + Integer.toString(targetTemp);
+                urlSetTem = "http://192.168.0.38/setTargetTmp/" + Integer.toString(targetTemp);
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
                         ((MainActivity)MainActivity.context_main).request(urlSetTem);
                     }
                 }).start();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ((MainActivity)MainActivity.context_main).targetTem = targetTemp;
+                    }
+                });
             }
         });
 
@@ -101,6 +107,7 @@ public class SettingTemActivity extends AppCompatActivity {
         btnReturn1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                targetTemp = npcTarTmp.getValue();
                 Intent outIntent = new Intent(getApplicationContext(), MainActivity.class);
                 outIntent.putExtra("TargetTemp", targetTemp);
                 setResult(RESULT_OK, outIntent);

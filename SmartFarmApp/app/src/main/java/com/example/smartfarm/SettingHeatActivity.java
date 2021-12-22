@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class SettingHeatActivity extends AppCompatActivity {
 
-    String urlSetHeat = "http://192.168.10.108/setHeatC/";
+    String urlSetHeat = "http://192.168.0.38/setHeatC/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,20 +20,22 @@ public class SettingHeatActivity extends AppCompatActivity {
         Switch heatSwitch;
         Button btnReturn4;
 
+        //열풍기 On/Off 여부 전달
         heatSwitch = (Switch)findViewById(R.id.heatSwitch);
         heatSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 if (heatSwitch.isChecked()==true) {
-                    urlSetHeat = "http://192.168.10.108/setHeatC/1";
-                    ((MainActivity)MainActivity.context_main).request(urlSetHeat);
+                    String urlSetHeat1 = urlSetHeat + "1";
+                    ((MainActivity)MainActivity.context_main).request(urlSetHeat1);
                 } else {
-                    urlSetHeat = "http://192.168.10.108/setHeatC/0";
-                    ((MainActivity)MainActivity.context_main).request(urlSetHeat);
+                    String urlSetHeat0 = urlSetHeat + "0";
+                    ((MainActivity)MainActivity.context_main).request(urlSetHeat0);
                 }
             }
         });
 
+        //종료
         btnReturn4 = (Button) findViewById(R.id.btnReturn4);
         btnReturn4.setOnClickListener(new View.OnClickListener() {
             @Override

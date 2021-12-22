@@ -13,8 +13,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class SettingWindowActivity extends AppCompatActivity {
 
-    String urlSetLeftWindow = "http://192.168.10.108/setLeftWindowC/";
-    String urlSetRightWindow = "http://192.168.10.108/setRightWindowC/";
+    String urlSetLeftWindow = "http://192.168.0.38/setLeftWindowC/";
+    String urlSetRightWindow = "http://192.168.0.38/setRightWindowC/";
 
     @Override
     protected void onCreate( Bundle savedInstanceState) {
@@ -24,34 +24,57 @@ public class SettingWindowActivity extends AppCompatActivity {
         Switch lwSwitch, rwSwitch;
         Button btnReturn5;
 
+        //좌측개폐기 스위치
         lwSwitch = (Switch)findViewById(R.id.lwSwitch);
         lwSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 if (lwSwitch.isChecked()==true) {
-                    urlSetLeftWindow = "http://192.168.10.108/setLeftWindowC/1";
-                    ((MainActivity)MainActivity.context_main).request(urlSetLeftWindow);
+                    String urlSetLeftWindow1 = urlSetLeftWindow + "1";
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            ((MainActivity)MainActivity.context_main).request(urlSetLeftWindow1);
+                        }
+                    }).start();
                 } else {
-                    urlSetLeftWindow = "http://192.168.10.108/setLeftWindowC/0";
-                    ((MainActivity)MainActivity.context_main).request(urlSetLeftWindow);
+                    String urlSetLeftWindow0 = urlSetLeftWindow + "0";
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            ((MainActivity)MainActivity.context_main).request(urlSetLeftWindow0);
+                        }
+                    }).start();
                 }
             }
         });
 
+        //우측개폐기 스위치
         rwSwitch = (Switch)findViewById(R.id.rwSwitch);
         rwSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 if (rwSwitch.isChecked()==true) {
-                    urlSetRightWindow = "http://192.168.10.108/setRightWindowC/1";
-                    ((MainActivity)MainActivity.context_main).request(urlSetRightWindow);
+                    String urlSetRightWindow1 = urlSetRightWindow + "1";
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            ((MainActivity)MainActivity.context_main).request(urlSetRightWindow1);
+                        }
+                    }).start();
                 } else {
-                    urlSetRightWindow = "http://192.168.10.108/setRightWindowC/0";
-                    ((MainActivity)MainActivity.context_main).request(urlSetRightWindow);
+                    String urlSetRightWindow0 = urlSetRightWindow + "0";
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            ((MainActivity)MainActivity.context_main).request(urlSetRightWindow0);
+                        }
+                    }).start();
                 }
             }
         });
 
+        //종료
         btnReturn5 = (Button) findViewById(R.id.btnReturn5);
         btnReturn5.setOnClickListener(new View.OnClickListener() {
             @Override

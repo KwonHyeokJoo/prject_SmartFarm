@@ -21,12 +21,12 @@ import java.net.URL;
 public class SettingHumActivity extends AppCompatActivity {
 
     boolean ConnectionState;
-    public TextView tvTargetH, tvHum;// 습도
-    Button btnReturn2, btnHumDown, btnHumUp, btnApply2;
-    NumberPicker npcTarHum;
-    int CurrentHum1, CurrentHum2, targetHum;
+    public TextView tvTargetH, tvHum;// 습도 표시용 TextView
+    Button btnReturn2, btnHumDown, btnHumUp, btnApply2; // 목표 습도 조절용 Button
+    NumberPicker npcTarHum; // 목표 습도 조절용 NumberPicker
+    int CurrentHum1, CurrentHum2, targetHum; // 현재 습도 1,2, 목표 습도
     public static Context context_setHum;
-    String urlSetHum;
+    String urlSetHum; // 목표 습도 전달용 url
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,13 +82,19 @@ public class SettingHumActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 targetHum = npcTarHum.getValue();
-                urlSetHum = "http://192.168.10.108/setTargetHum/" + Integer.toString(targetHum);
+                urlSetHum = "http://192.168.0.38/setTargetHum/" + Integer.toString(targetHum);
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
                         ((MainActivity)MainActivity.context_main).request(urlSetHum);
                     }
                 }).start();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ((MainActivity)MainActivity.context_main).targetHum=targetHum;
+                    }
+                });
             }
         });
 
@@ -100,7 +106,7 @@ public class SettingHumActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent outIntent = new Intent(getApplicationContext(), MainActivity.class);
                 targetHum = npcTarHum.getValue();
-                outIntent.putExtra("TargetTemp", targetHum);
+                outIntent.putExtra("TargetHumi", targetHum);
                 setResult(RESULT_OK, outIntent);
                 finish();
             }

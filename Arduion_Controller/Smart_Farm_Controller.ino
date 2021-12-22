@@ -24,14 +24,8 @@
 #define FAN_SPEED_MIN 80            // FAN의 최소속도
 #define FAN_SPEED_ZERO 0
 
-#define ON 1
-#define OFF 0
-
-#define PUMP_TIME 10000             // 펌프 가동시간
-#define PUMP_LED_STANDARD 5000      // led 가동 단위시간
-#define PUMP_LED1_TIME 2000         // led1 가동시간
-#define PUMP_LED2_TIME 1000         // led2 가동시간
-#define PUMP_LED3_TIME 3000         // led3 가동시간
+#define ON 1                        // On 1 return 
+#define OFF 0                       // Off 0 return
 
 Servo leftWindow;
 Servo rightWindow;
@@ -44,17 +38,21 @@ const String password = "12345678";
 const String ip = "192.168.1.1";
 const String port = "80";
 
-//수동 및 자동 제어, 0이면 수동제어, 1이면 자동제어
-// 토양수분, 온도1, 온도2, 습도1, 습도2, 조도,
-// 수동자동, 팬상태, 팬스피드, 왼쪽개폐기, 오른쪽개폐기, 열풍기
-// Receive ALL Data
+//Getter, 서버에서 데이터 읽어오기
 const uint8_t sensingDataCount = 7; //getTargetTmp 추가
 const uint8_t controlDataCount = 6; 
 const uint8_t allDataCount = sensingDataCount + controlDataCount;
-String receiveType[allDataCount] = {"grd","tmp1","tmp2","hum1","hum2","lux","getTargetTmp",
+const String GetterType = "get";
+String getDataType[allDataCount] = {"grd","tmp1","tmp2","hum1","hum2","lux","getTargetTmp",
                                     "getManualControl","getFanState","getFanSpeed",
                                     "getLeftWindow","getRightWindow","getHeaterState"};
-int16_t receiveValue[allDataCount] = {0,0,0,0,0,0,0,1,0,0,0,0,0};
+int16_t getDataValue[allDataCount] = {0,0,0,0,0,0,0,1,0,0,0,0,0};
+
+//Setter, 서버로 데이터 보내기
+const uint8_t setterCount = 4;
+const String SetterType = "set";
+String setDataType[setterCount] = {"setFanc","setHeatC","setLeftWindowC","setRightWindowC"};
+int16_t setDataValue[setterCount] = {0,0,0,0};
 
 //fan 시작 시간 측정
 uint64_t startFanSpeedControl;
@@ -81,13 +79,19 @@ uint64_t  startHeaterControl = millis();
 uint64_t  endHeaterControl = millis();
 const uint16_t waitHeaterControl = 1000;
 
-//pump 및 led 시간 측정
+//pump, led 시간 측정 및 wait 시간
 uint64_t startPumpTime = millis();
 uint64_t endPumpTime = millis(); 
 uint64_t startLedTime = millis();
 uint64_t endLedTime = millis();
 
+const uint16_t waitPumpTime = 10000;          // 펌프 가동시간
+const uint16_t waitPumpLedStandard = 5000;    // led 가동 단위시간
+const uint16_t waitPumpLedTime_1 = 2000;      // led1 가동시간
+const uint16_t waitPumpLedTime_2 = 1000;      // led2 가동시간
+const uint16_t waitPumpLedTime_3 = 3000;      // led3 가동시간
 
+/////////////////////////////////////////////////////////////////////////////////
 //wifi connection
 void connectWifi() {
   uint8_t connectionStatus;
@@ -129,64 +133,9 @@ void connectWifi() {
     }
   }
 }
-// 현재 상태 출력
-uint8_t nowStatus(){
-  uint8_t connectionStatus;
-
-  Serial.println(F("\r\n---------- AT+CIPSTATUS ----------\r\n"));
-  Serial3.println(F("AT+CIPSTATUS"));
-  // 'STATUS:' 가 들어오면 뒤에 숫자 값을 받아 리턴
-  if(Serial3.find("STATUS:")){
-    connectionStatus = Serial3.parseInt();
-  }
-  responseSerial("OK");
-
-  return connectionStatus;
-}
-//Command 값 가져오기
-int16_t returnCommand(){
-  int16_t returnCommand;
-  
-  if(Serial3.find('@')){
-    returnCommand = Serial3.parseInt();
-  }
-
-  return returnCommand;
-}
-
-
-//Serial 출력 및 Command 정상으로 들어갔나 확인
-void responseSerial(char* keyword){
-  uint8_t cutChar = 0;
-  uint8_t keywordLength = 0;
-  unsigned long startTime;
-  int i;
-
-  for(i=0; keyword[i] != NULL; i++){
-    keywordLength++;
-  }
-
-  startTime = millis();
-  while((millis() - startTime) < TIMEOUT){
-    if(Serial3.available()){
-      char ch = Serial3.read();
-      Serial.write(ch);
-
-      if(ch == keyword[cutChar]){
-        cutChar++;
-        if(cutChar == keywordLength){
-          return;
-        }
-      }
-      else {
-        cutChar = 0;
-      }
-    }
-  }
-  return;
-}
-
-void receiveData(String returnType, String url){
+/////////////////////////////////////////////////////////////////////////////////
+//Getter, Setter data 송수신부
+void GetSetData(String GetSetType, String returnType, String url){
   uint8_t startStop = 1;
 
   while(1){
@@ -217,8 +166,14 @@ void receiveData(String returnType, String url){
     responseSerial("OK\r\n>");
   
     Serial.print(F("\r\n---------- GET ----------\r\n"));
-    Serial3.println(url);
-    receiveAllData(returnType);
+    if(GetSetType == GetterType){
+      //Getter가 들어오면 들어온 값을 넣어줘야하기때문에 구분지어 사용
+      Serial3.println(url);
+      receiveAllData(returnType);
+    }
+    else if(GetSetType == SetterType){
+      Serial3.println(url);
+    }
     responseSerial("CLOSED");
 
     startStop = nowStatus();
@@ -238,17 +193,75 @@ void receiveData(String returnType, String url){
     }
   }
 }
+/////////////////////////////////////////////////////////////////////////////////
+// 현재 상태 출력
+uint8_t nowStatus(){
+  uint8_t connectionStatus;
+
+  Serial.println(F("\r\n---------- AT+CIPSTATUS ----------\r\n"));
+  Serial3.println(F("AT+CIPSTATUS"));
+  // 'STATUS:' 가 들어오면 뒤에 숫자 값을 받아 리턴
+  if(Serial3.find("STATUS:")){
+    connectionStatus = Serial3.parseInt();
+  }
+  responseSerial("OK");
+
+  return connectionStatus;
+}
+/////////////////////////////////////////////////////////////////////////////////
+//Command 값 가져오기
+int16_t returnCommand(){
+  int16_t returnCommand;
+  
+  if(Serial3.find('@')){
+    returnCommand = Serial3.parseInt();
+  }
+
+  return returnCommand;
+}
+/////////////////////////////////////////////////////////////////////////////////
 // Sensing & Control Data 가져오기
 void receiveAllData(String returnType){
   int i;
 
   for(i=0; i<allDataCount; i++){
-    if(returnType == receiveType[i]){
-      receiveValue[i] = returnCommand();
+    if(returnType == getDataType[i]){
+      getDataValue[i] = returnCommand();
     }
   }
 }
+/////////////////////////////////////////////////////////////////////////////////
+//Serial 출력 및 Command 정상으로 들어갔나 확인
+void responseSerial(char* keyword){
+  uint8_t cutChar = 0;
+  uint8_t keywordLength = 0;
+  unsigned long startTime;
+  int i;
 
+  for(i=0; keyword[i] != NULL; i++){
+    keywordLength++;
+  }
+
+  startTime = millis();
+  while((millis() - startTime) < TIMEOUT){
+    if(Serial3.available()){
+      char ch = Serial3.read();
+      Serial.write(ch);
+
+      if(ch == keyword[cutChar]){
+        cutChar++;
+        if(cutChar == keywordLength){
+          return;
+        }
+      }
+      else {
+        cutChar = 0;
+      }
+    }
+  }
+  return;
+}
+/////////////////////////////////////////////////////////////////////////////////
 // Moter Control
 void moterControl(uint8_t moterStatus, uint8_t pin_In_1, uint8_t pin_In_2){
   //정방향 작동시 입력값 1, 역방향 -1, 나머지 값 멈춤
@@ -268,7 +281,7 @@ void moterControl(uint8_t moterStatus, uint8_t pin_In_1, uint8_t pin_In_2){
     digitalWrite(pin_In_2, LOW);
   }
 }
-
+/////////////////////////////////////////////////////////////////////////////////
 // LOW 가 on, HIGH가 off
 void relayControl(uint8_t pinNumber,uint8_t relayOnOff){
   if(relayOnOff == 1){
@@ -280,7 +293,7 @@ void relayControl(uint8_t pinNumber,uint8_t relayOnOff){
     digitalWrite(pinNumber, HIGH);
   }
 }
-
+/////////////////////////////////////////////////////////////////////////////////
 void setup() {
   Serial.begin(9600);
   Serial3.begin(9600);
@@ -315,7 +328,7 @@ void setup() {
   digitalWrite(PUMP_LED_PIN_2, HIGH);
   digitalWrite(PUMP_LED_PIN_3, HIGH);
 }
-
+/////////////////////////////////////////////////////////////////////////////////
 void loop() {
   uint8_t manualControl;
   uint8_t oldFanSpeed = 0;
@@ -332,57 +345,57 @@ void loop() {
   //센싱 값 입력 받기
   ///////////////////////////////////////////////////////////////////////////////
   for(i=0; i<allDataCount; i++){
-    url = "GET /"+ receiveType[i] +" HTTP/1.1\r\nHost: " + ip +"\r\n\r\n";
-    receiveData(receiveType[i], url);
+    url = "GET /"+ getDataType[i] +" HTTP/1.1\r\nHost: " + ip +"\r\n\r\n";
+    GetSetData(GetterType, getDataType[i], url);
   }
   ///////////////////////////////////////////////////////////////////////////////
 
   // 전달 받은 센싱값 및 제어값 가져오기
   for(i=0; i<allDataCount; i++){
-    if(receiveType[i] == "grd"){
-      grdData = receiveValue[i];
+    if(getDataType[i] == "grd"){
+      grdData = getDataValue[i];
     }
-    else if(receiveType[i] == "tmp1"){
-      tmp1Data = receiveValue[i];
+    else if(getDataType[i] == "tmp1"){
+      tmp1Data = getDataValue[i];
     }
-    else if(receiveType[i] == "tmp2"){
-      tmp2Data = receiveValue[i];
+    else if(getDataType[i] == "tmp2"){
+      tmp2Data = getDataValue[i];
     }
-    else if(receiveType[i] == "hum1"){
-      hum1Data = receiveValue[i];
+    else if(getDataType[i] == "hum1"){
+      hum1Data = getDataValue[i];
     }
-    else if(receiveType[i] == "hum2"){
-      hum2Data = receiveValue[i];
+    else if(getDataType[i] == "hum2"){
+      hum2Data = getDataValue[i];
     }
-    else if(receiveType[i] == "lux"){
-      luxData = receiveValue[i];
+    else if(getDataType[i] == "lux"){
+      luxData = getDataValue[i];
     }
-    else if(receiveType[i] == "getTargetTmp"){
-      targetTemp = receiveValue[i];
+    else if(getDataType[i] == "getTargetTmp"){
+      targetTemp = getDataValue[i];
     }
-    else if(receiveType[i] == "getManualControl"){
-      manualControl = receiveValue[i];
+    else if(getDataType[i] == "getManualControl"){
+      manualControl = getDataValue[i];
     }
-    else if(receiveType[i] == "getFanState"){
-      fanState = receiveValue[i];
+    else if(getDataType[i] == "getFanState"){
+      fanState = getDataValue[i];
     }
-    else if(receiveType[i] == "getFanSpeed"){
-      fanSpeed = receiveValue[i];
+    else if(getDataType[i] == "getFanSpeed"){
+      fanSpeed = getDataValue[i];
     }
-    else if(receiveType[i] == "getLeftWindow"){
-      LeftControl = receiveValue[i];
+    else if(getDataType[i] == "getLeftWindow"){
+      LeftControl = getDataValue[i];
     }
-    else if(receiveType[i] == "getRightWindow"){
-      RightControl = receiveValue[i];
+    else if(getDataType[i] == "getRightWindow"){
+      RightControl = getDataValue[i];
     }
-    else if(receiveType[i] == "getHeaterState"){
-      heater = receiveValue[i];
+    else if(getDataType[i] == "getHeaterState"){
+      heater = getDataValue[i];
     }
     else {
       Serial.print(F("\r\n\r\n === err === \r\n\r\n"));
     }
   }
-  
+/////////////////////////////////////////////////////////////////////////////////
   //수동 제어
   if(manualControl == 0){
     //Fan Control
@@ -434,7 +447,7 @@ void loop() {
         endFanSpeedControl = millis();
       }
     }
-
+/////////////////////////////////////////////////////////////////////////////////
     // Left Window 개폐
     if(LeftControl == OFF){
       //close window control
@@ -474,7 +487,7 @@ void loop() {
     else {
       Serial.print(F("\r\n === LeftWindow err, return value err === \r\n"));
     }
-    
+/////////////////////////////////////////////////////////////////////////////////
     //Right Window 개폐
     if(RightControl == OFF){
       //close window control
@@ -514,51 +527,32 @@ void loop() {
     else {
       Serial.print(F("\r\n === RightWindow err, return value err === \r\n"));
     }
-
+/////////////////////////////////////////////////////////////////////////////////
     //Heater Control On Off
-    if(heater == OFF) {
-      if(digitalRead(HEATER_PIN == LOW)){
-        Serial.print(F("\r\n\r\n === 작동 중지상태 === \r\n\r\n"));
+    if(heater == OFF){
+      //작동 중지 명령
+      if(digitalRead(HEATER_PIN) == HIGH){
+        //이미 정지 상태
+        Serial.print(F("\r\n === Heater 이미 정지 상태 === \r\n"));
       }
-      else { 
-        //가동중이라면
-        if((endHeaterControl - startHeaterControl) > waitHeaterControl){
-          startHeaterControl = millis();
-          heater = OFF;
-          relayControl(HEATER_PIN,heater);  
-        } 
-        else {
-          Serial.print(F("\r\n\r\n === 작동 중지 대기중=== \r\n\r\n"));
-          endHeaterControl = millis();
-        }
+      else {
+        //가동을 정지로 변경
+        heater = OFF;
       }
-    } else if(heater == ON) {
-        if(digitalRead(HEATER_PIN == HIGH)) {
-          Serial.print(F("\r\n\r\n === 작동 상태 === \r\n\r\n"));
-        }
-        else {
-          //작동중지상태라면
-          if((endHeaterControl - startHeaterControl) > waitHeaterControl){
-            startHeaterControl = millis();
-            heater = OFF;
-            relayControl(HEATER_PIN,heater);
-          } 
-          else {
-            Serial.print(F("\r\n\r\n === 작동 대기중 === \r\n\r\n"));
-            endHeaterControl = millis();
-          }
-        } 
-    } else {
-        Serial.print(F("\r\n === Heater err, return value err === \r\n"));
     }
-    /*
-    if(digitalRead(HEATER_PIN) == HIGH && heater == OFF){
-      relayControl(HEATER_PIN, heater);
+    else if(heater == ON){
+      // 작동 가동 명령
+      if(digitalRead(HEATER_PIN) == LOW){
+        // 이미 가동 상태
+        Serial.print(F("\r\n === Heater 이미 가동 상태 === \r\n"));
+      }
+      else {
+        // 정지를 가동으로 변경
+        heater = ON;
+      }
     }
-    else if(digitalRead(HEATER_PIN) == LOW && heater == ON){
-      relayControl(HEATER_PIN, heater);
-    }
-    */
+    relayControl(HEATER_PIN, heater);
+/////////////////////////////////////////////////////////////////////////////////
   }
   //자동 제어
   else if(manualControl == 1){ 
@@ -587,7 +581,7 @@ void loop() {
       moterControl(fanState, FANCONTROL_IN_1, FANCONTROL_IN_2);
       analogWrite(FANCONTROL_SPEED,fanSpeed);
     }
-
+/////////////////////////////////////////////////////////////////////////////////
     //히터(Auto)
     //목표온도가 현재온도와 3도이상 차이날 경우 히터 On 
     if(targetTemp < tempAvg){
@@ -600,7 +594,7 @@ void loop() {
       }
       relayControl(HEATER_PIN, heater);
     }
-    
+///////////////////////////////////////////////////////////////////////////////// 
     //개폐기(Auto)
     //목표온도가 현재온도와 3도이상 차이날 경우 개폐기 On 
     if(tempAvg < targetTemp){
@@ -617,13 +611,12 @@ void loop() {
       rightWindow.write(rightWindowAngle);
     } 
   }
-  
-  //토양습도센서
-  //목표습도보다 낮은 경우 워터펌프 가동
+/////////////////////////////////////////////////////////////////////////////////
+  //토양습도센서, 목표습도보다 낮은 경우 워터펌프 가동
   if(grdData <= targetMoist) {
     //10초동안 pump 가동
     if(digitalRead(PUMP_PIN) == LOW) {
-      if((endPumpTime - startPumpTime)) > PUMP_TIME) {
+      if((endPumpTime - startPumpTime) > waitPumpTime) {
         //10초동안 pump 가동 여부 확인 후 10초 이상이면 pump 및 led 종료 
         pumpState = OFF;
         ledState_1 = OFF;
@@ -634,19 +627,19 @@ void loop() {
         //10초가 안지났으면 pump 종료를 위해 endTime 업데이트
         endPumpTime = millis();
         pumpState = ON;
-        Serial.printf(F("\r\n === Pump 이미 작동중 === \r\n"));
+        Serial.print(F("\r\n === Pump 이미 작동중 === \r\n"));
 
         //led1 2초, led2 1초, led3 3초 이후 종료
-        if((endLedTime - startLedTime) > PUMP_LED2_TIME) {
-          ledState_2 = OFF
+        if((endLedTime - startLedTime) > waitPumpLedTime_2) {
+          ledState_2 = OFF;
         }
-        else if((endLedTime - startLedTime) > PUMP_LED1_TIME) {
+        else if((endLedTime - startLedTime) > waitPumpLedTime_1) {
           ledState_1 = OFF;
         }
-        else if((endLedTime - startLedTime) > PUMP_LED3_TIME) {
+        else if((endLedTime - startLedTime) > waitPumpLedTime_3) {
           ledState_3 = OFF;
         }
-        else if((endLedTime - startLedTime) > PUMP_LED_STANDARD) {
+        else if((endLedTime - startLedTime) > waitPumpLedStandard) {
           //5초 후 led On으로 바꿔 준 후 start, end 시간 초기화
           startLedTime = millis();
           ledState_1 = ON;
@@ -681,13 +674,51 @@ void loop() {
     ledState_2 = OFF;
     ledState_3 = OFF;
   }
-   
-  
+  // pump 및 led 릴레이 start and stop
+  relayControl(PUMP_PIN, pumpState);
+  relayControl(PUMP_LED_PIN_1, ledState_1);
+  relayControl(PUMP_LED_PIN_2, ledState_2);
+  relayControl(PUMP_LED_PIN_3, ledState_3);
+/////////////////////////////////////////////////////////////////////////////////
   //조도센서
   //목표 조도보다 낮은 경우 생장LED센서 작동
   if(luxData < targetLux) {
-    relayControl(PUMP_PIN, ON);
-  } else {
-    relayControl(PUMP_PIN, OFF);
+    relayControl(LED_PIN, OFF);
   }
+  else {
+    relayControl(LED_PIN, ON);
+  }
+/////////////////////////////////////////////////////////////////////////////////
+  //현재 작동 상태 OnOff 여부 송부
+  for(i=0; i<setterCount; i++){
+    if(setDataType[i] == "setFanC"){
+      setDataValue[i] = fanState;
+    }
+    else if(setDataType[i] == "setHeatC"){
+      setDataValue[i] = heater;
+    }
+    else if(setDataType[i] == "setLeftWindowC"){
+      if(leftWindowAngle > WINDOW_ANGLE_MIN){
+        setDataValue[i] = ON;
+      }
+      else {
+        setDataValue[i] = OFF;
+      }
+    }
+    else if(setDataType[i] == "setRightWindowC"){
+      if(rightWindowAngle > WINDOW_ANGLE_MIN){
+        setDataValue[i] = ON;
+      }
+      else {
+        setDataValue[i] = OFF;
+      }
+    }
+  }
+/////////////////////////////////////////////////////////////////////////////////
+  //Setter, 현재 정보 서버에 송부
+  for(i=0; i<setterCount; i++){
+    url = "GET /"+ setDataType[i] +"/" + setDataValue[i] + " HTTP/1.1\r\nHost: " + ip +"\r\n\r\n";
+    GetSetData(SetterType, setDataType[i], url);
+  }
+/////////////////////////////////////////////////////////////////////////////////
 }

@@ -28,6 +28,7 @@
 #define OFF 0
 
 #define PUMP_TIME 10000             // 펌프 가동시간
+#define PUMP_LED_STANDARD 5000      // led 가동 단위시간
 #define PUMP_LED1_TIME 2000         // led1 가동시간
 #define PUMP_LED2_TIME 1000         // led2 가동시간
 #define PUMP_LED3_TIME 3000         // led3 가동시간
@@ -80,10 +81,12 @@ uint64_t  startHeaterControl = millis();
 uint64_t  endHeaterControl = millis();
 const uint16_t waitHeaterControl = 1000;
 
-//펌프 시간 측정
-uint64_t currentMillis = millis();
-uint64_t previousMillis = 0; 
-const uint16_t interval = 5000;
+//pump 및 led 시간 측정
+uint64_t startPumpTime = millis();
+uint64_t endPumpTime = millis(); 
+uint64_t startLedTime = millis();
+uint64_t endLedTime = millis();
+
 
 //wifi connection
 void connectWifi() {
@@ -317,10 +320,10 @@ void loop() {
   uint8_t manualControl;
   uint8_t oldFanSpeed = 0;
   uint8_t fanState,fanSpeed,LeftControl,RightControl,heater;
-  //자동제어시 펌프상태 저장변수
-  uint8_t pumpState;
+  //자동제어시 펌프상태 및 led1, led2, led3 저장변수
+  uint8_t pumpState,ledState_1,ledState_2,ledState_3 ;
   // 생장LED 상태 저장변수
-  uint8_t ledState;
+  uint8_t ledBarState;
   // 토양습도, 온도1, 온도2, 습도1, 습도2 값 저장받을 변수
   uint8_t grdData,tmp1Data,tmp2Data,hum1Data,hum2Data,luxData;
   int i,j;
@@ -618,16 +621,67 @@ void loop() {
   //토양습도센서
   //목표습도보다 낮은 경우 워터펌프 가동
   if(grdData <= targetMoist) {
-    pumpState = ON;
-    currentMillis = millis();
-  } 
-  else {
-    pumpState = OFF;
-    relayControl(PUMP_PIN, pumpState); 
+    //10초동안 pump 가동
+    if(digitalRead(PUMP_PIN) == LOW) {
+      if((endPumpTime - startPumpTime)) > PUMP_TIME) {
+        //10초동안 pump 가동 여부 확인 후 10초 이상이면 pump 및 led 종료 
+        pumpState = OFF;
+        ledState_1 = OFF;
+        ledState_2 = OFF;
+        ledState_3 = OFF;
+      }
+      else {
+        //10초가 안지났으면 pump 종료를 위해 endTime 업데이트
+        endPumpTime = millis();
+        pumpState = ON;
+        Serial.printf(F("\r\n === Pump 이미 작동중 === \r\n"));
+
+        //led1 2초, led2 1초, led3 3초 이후 종료
+        if((endLedTime - startLedTime) > PUMP_LED2_TIME) {
+          ledState_2 = OFF
+        }
+        else if((endLedTime - startLedTime) > PUMP_LED1_TIME) {
+          ledState_1 = OFF;
+        }
+        else if((endLedTime - startLedTime) > PUMP_LED3_TIME) {
+          ledState_3 = OFF;
+        }
+        else if((endLedTime - startLedTime) > PUMP_LED_STANDARD) {
+          //5초 후 led On으로 바꿔 준 후 start, end 시간 초기화
+          startLedTime = millis();
+          ledState_1 = ON;
+          ledState_2 = ON;
+          ledState_3 = ON;
+          endLedTime = millis();
+        }
+        else {
+          //아무것도 못들어갔다면 end만 초기화
+          endLedTime = millis();
+        }
+      }
+    }
+    else {
+      //가동 중이 아니므로 펌프 및 led 가동 정보 입력
+      pumpState = ON;
+      ledState_1 = ON;
+      ledState_2 = ON;
+      ledState_3 = ON;
+
+      //시간 계산을 위해 pump와 led start, end 초기화
+      startPumpTime = millis();
+      startLedTime = millis();
+      endPumpTime = millis();
+      endLedTime = millis();
+    }
   }
-  //워터펌프
-  //워터펌프 펌프가동시 워터펌프는 항시작동(10초) led1(2초/5초), led2(1초/5초), led3(3초/5초) 작동
-  //PUMP_LED1_TIME 2000, PUMP_LED2_TIME 1000, PUMP_LED3_TIME 3000   
+  else {
+    //수분이 넘었다면 그냥 종료 
+    pumpState = OFF;
+    ledState_1 = OFF;
+    ledState_2 = OFF;
+    ledState_3 = OFF;
+  }
+   
   
   //조도센서
   //목표 조도보다 낮은 경우 생장LED센서 작동

@@ -8,12 +8,12 @@
 #define LEFT_WINDOW_PIN 8
 #define RIGHT_WINDOW_PIN 9
 
-#define HEATER_PIN 2
-#define LED_PIN 3
-#define PUMP_PIN 4
-#define PUMP_LED_PIN_1 5
-#define PUMP_LED_PIN_2 6
-#define PUMP_LED_PIN_3 7
+#define HEATER_PIN 31
+#define LED_PIN 33
+#define PUMP_PIN 35
+#define PUMP_LED_PIN_1 37
+#define PUMP_LED_PIN_2 39
+#define PUMP_LED_PIN_3 41
 
 #define TIMEOUT 10000               // TimeOut 시간 설정
 #define WINDOW_ANGLE_MAX 30         // 개폐기 최대 각도
@@ -630,21 +630,24 @@ void loop() {
         Serial.print(F("\r\n === Pump 이미 작동중 === \r\n"));
 
         //led1 2초, led2 1초, led3 3초 이후 종료
-        if((endLedTime - startLedTime) > waitPumpLedTime_2) {
-          ledState_2 = OFF;
-        }
-        else if((endLedTime - startLedTime) > waitPumpLedTime_1) {
-          ledState_1 = OFF;
-        }
-        else if((endLedTime - startLedTime) > waitPumpLedTime_3) {
-          ledState_3 = OFF;
-        }
-        else if((endLedTime - startLedTime) > waitPumpLedStandard) {
+        if((endLedTime - startLedTime) > waitPumpLedStandard) {
           //5초 후 led On으로 바꿔 준 후 start, end 시간 초기화
           startLedTime = millis();
           ledState_1 = ON;
           ledState_2 = ON;
           ledState_3 = ON;
+          endLedTime = millis();
+        }
+        else if((endLedTime - startLedTime) > waitPumpLedTime_3) {
+          ledState_3 = OFF;
+          endLedTime = millis();
+        }
+        else if((endLedTime - startLedTime) > waitPumpLedTime_1) {
+          ledState_1 = OFF;
+          endLedTime = millis();
+        }
+        else if((endLedTime - startLedTime) > waitPumpLedTime_2) {
+          ledState_2 = OFF;
           endLedTime = millis();
         }
         else {
@@ -681,7 +684,7 @@ void loop() {
   relayControl(PUMP_LED_PIN_3, ledState_3);
 /////////////////////////////////////////////////////////////////////////////////
   //조도센서
-  //목표 조도보다 낮은 경우 생장LED센서 작동
+  //목표 조도보다 높은 경우 생장LED센서 작동
   if(luxData < targetLux) {
     relayControl(LED_PIN, OFF);
   }

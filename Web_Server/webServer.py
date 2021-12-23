@@ -1,27 +1,27 @@
 from flask import Flask, render_template
 
-mos = 30
-tmp1 = 25
-tmp2 = 26
-hum1 = 27
-hum2 = 28
-lux = 500
+mos = 2
+tmp1 = 2
+tmp2 = 2
+hum1 = 2
+hum2 = 2
+lux = 2
 tmpTarget = 30 #목표온도기준값
-humTarget = 40 #목표습도기준값
+humTarget = 30 #목표습도기준값
 manualControl = 1 #수동/자동제어
 ########################################
 #수동용변수
-fanStateCtrl = 0 #팬 온/오프
-heatStateCtrl = 0 #히터 온/오프
-leftWindowCtrl = 0 #왼쪽개폐기 온/오프
-rightWindowCtrl = 0 #오른쪽개폐기 온/오프
+fanStateCtrl = 2 #팬 온/오프
+heatStateCtrl = 2 #히터 온/오프
+leftWindowCtrl = 2 #왼쪽개폐기 온/오프
+rightWindowCtrl = 2 #오른쪽개폐기 온/오프
 ########################################
 #자동용변수
-fanState = 0 #팬 온/오프
-fanSpeed = 0 #팬속도제어
-leftWindow = 0 #왼쪽개폐기 온/오프
-rightWindow = 0 #오른쪽개폐기 온/오프
-heaterState = 0 #히터 온/오프
+fanState = 2 #팬 온/오프
+fanSpeed = 2 #팬속도제어
+leftWindow = 2 #왼쪽개폐기 온/오프
+rightWindow = 2 #오른쪽개폐기 온/오프
+heaterState = 2 #히터 온/오프
 ########################################
 #컨트롤러변수
 ctrlLeftWindow = 0

@@ -51,11 +51,11 @@ public class SettingFanActivity extends AppCompatActivity {
                     }).start();
                 } else {
                     SBfanSpeed.setEnabled(false);
-                    String urlSetFan0 =   urlSetFan + "0";
+                    String urlSetFan2 =   urlSetFan + "2";
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            ((MainActivity)MainActivity.context_main).request(urlSetFan0);
+                            ((MainActivity)MainActivity.context_main).request(urlSetFan2);
                         }
                     }).start();
                 }

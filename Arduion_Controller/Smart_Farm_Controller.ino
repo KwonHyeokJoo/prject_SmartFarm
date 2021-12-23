@@ -69,7 +69,7 @@ int8_t rightWindowAngle = WINDOW_ANGLE_MAX;
 //목표 온도, 습도, 조도
 uint8_t targetTemp; 
 uint8_t targetMoist = 40;
-uint8_t targetLux = 600; 
+uint16_t targetLux = 600; 
 
 //개폐기 시간 측정
 uint64_t leftStartWindowTime = millis();
@@ -370,6 +370,7 @@ void loop() {
     }
     else if(getDataType[i] == "lux"){
       luxData = getDataValue[i];
+      Serial.println();
       Serial.println(luxData);
     }
     else if(getDataType[i] == "getTargetTmp"){
@@ -386,7 +387,6 @@ void loop() {
     }
     else if(getDataType[i] == "getLeftWindow"){
       LeftControl = getDataValue[i];
-
     }
     else if(getDataType[i] == "getRightWindow"){
       RightControl = getDataValue[i];
@@ -708,11 +708,11 @@ void loop() {
 /////////////////////////////////////////////////////////////////////////////////
   //조도센서
   //목표 조도보다 높은 경우 생장LED센서 작동
-  if(luxData < targetLux) {
-    relayControl(LED_PIN, OFF);
-  }
-  else if(luxData >= targetLux){
+  if(luxData > targetLux) {
     relayControl(LED_PIN, ON);
+  }
+  else {
+    relayControl(LED_PIN, OFF);
   }
 
 ///////////////////////////////////////////////////////////////////////////////////

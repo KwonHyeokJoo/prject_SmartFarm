@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
     public int curTem1, curTem2, curHum1, curHum2, leftWindow, rightWindow, fanState, heaterState,
             getCurTem1, getCurTem2, getCurHum1, getCurHum2, getLw, getRw, getFs, getHs;
 
-    String urlCtrl = "http://192.168.0.38/setControl/";
+    String urlCtrl = "http://192.168.0.38/setManualControl/";
     String urlTrd = "http://192.168.0.38/getState";
 
     @Override
@@ -53,10 +53,14 @@ public class MainActivity extends AppCompatActivity {
 
         context_main = this;
 
-        targetTem = 0;
-        targetHum = 0;
+        targetTem = 25;
+        targetHum = 40;
         curTem1 = 0;
         curTem2 = 0;
+
+
+
+
         curHum1 = 0;
         curHum2 = 0;
 
@@ -144,16 +148,26 @@ public class MainActivity extends AppCompatActivity {
                     btnHeat.setClickable(true);
                     btnLeftDoor.setClickable(true);
                     btnRightDoor.setClickable(true);
-                    urlCtrl += "1";
-                    request(urlCtrl);
+                    String urlCtrlN = urlCtrl + "2";
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            request(urlCtrlN);
+                        }
+                    }).start();
                 } else {
                     btnHum.setClickable(false);
                     btnFan.setClickable(false);
                     btnHeat.setClickable(false);
                     btnLeftDoor.setClickable(false);
                     btnRightDoor.setClickable(false);
-                    urlCtrl += "0";
-                    request(urlCtrl);
+                    String urlCtrlN = urlCtrl + "1";
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            request(urlCtrlN);
+                        }
+                    }).start();
                 }
 
             }
@@ -317,6 +331,8 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+
 
 
     // 서버 요청하기

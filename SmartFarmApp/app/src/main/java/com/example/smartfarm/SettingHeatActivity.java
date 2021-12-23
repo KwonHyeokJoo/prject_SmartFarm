@@ -27,10 +27,20 @@ public class SettingHeatActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                 if (heatSwitch.isChecked()==true) {
                     String urlSetHeat1 = urlSetHeat + "1";
-                    ((MainActivity)MainActivity.context_main).request(urlSetHeat1);
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            ((MainActivity)MainActivity.context_main).request(urlSetHeat1);
+                        }
+                    }).start();
                 } else {
-                    String urlSetHeat0 = urlSetHeat + "0";
-                    ((MainActivity)MainActivity.context_main).request(urlSetHeat0);
+                    String urlSetHeat2 = urlSetHeat + "2";
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            ((MainActivity)MainActivity.context_main).request(urlSetHeat2);
+                        }
+                    }).start();
                 }
             }
         });

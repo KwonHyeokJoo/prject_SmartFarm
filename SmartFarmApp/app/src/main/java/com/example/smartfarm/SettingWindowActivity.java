@@ -38,11 +38,11 @@ public class SettingWindowActivity extends AppCompatActivity {
                         }
                     }).start();
                 } else {
-                    String urlSetLeftWindow0 = urlSetLeftWindow + "0";
+                    String urlSetLeftWindow2 = urlSetLeftWindow + "2";
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            ((MainActivity)MainActivity.context_main).request(urlSetLeftWindow0);
+                            ((MainActivity)MainActivity.context_main).request(urlSetLeftWindow2);
                         }
                     }).start();
                 }
@@ -63,11 +63,11 @@ public class SettingWindowActivity extends AppCompatActivity {
                         }
                     }).start();
                 } else {
-                    String urlSetRightWindow0 = urlSetRightWindow + "0";
+                    String urlSetRightWindow2 = urlSetRightWindow + "2";
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            ((MainActivity)MainActivity.context_main).request(urlSetRightWindow0);
+                            ((MainActivity)MainActivity.context_main).request(urlSetRightWindow2);
                         }
                     }).start();
                 }
